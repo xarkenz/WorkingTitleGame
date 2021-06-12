@@ -1,0 +1,16 @@
+{
+  "format": "block_states",
+  "texture_size": [16, 16],
+  "textures": [
+    {
+      "coordinates": [0, 0],
+      "attribute": "axis",
+      "value": "y"
+    },
+    {
+      "coordinates": [1, 0],
+      "attribute": "axis",
+      "value": "x"
+    }
+  ]
+}

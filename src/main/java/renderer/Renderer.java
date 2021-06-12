@@ -1,7 +1,8 @@
 package renderer;
 
+import components.Block;
 import components.SpriteRenderer;
-import jade.GameObject;
+import core.GameObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,12 +24,12 @@ public class Renderer {
         }
     }
 
-    private void add(SpriteRenderer sprite) {
+    public void add(SpriteRenderer sprite) {
         boolean added = false;
         for (RenderBatch batch : batches) {
-            if (batch.hasRoom() && batch.zIndex() == sprite.gameObject.zIndex()) {
+            if (batch.getHasRoom() && batch.getZIndex() == sprite.gameObject.zIndex() && batch.getIsSpriteBatch()) {
                 Texture tex = sprite.getTexture();
-                if (tex == null || (batch.hasTexture(tex) || batch.hasTextureRoom())) {
+                if (tex == null || (batch.getHasTexture(tex) || batch.getHasTextureRoom())) {
                     batch.addSprite(sprite);
                     added = true;
                     break;
@@ -37,10 +38,32 @@ public class Renderer {
         }
 
         if (!added) {
-            RenderBatch newBatch = new RenderBatch(MAX_BATCH_SIZE, sprite.gameObject.zIndex());
+            RenderBatch newBatch = new RenderBatch(MAX_BATCH_SIZE, sprite.gameObject.zIndex(), true);
             newBatch.start();
             batches.add(newBatch);
             newBatch.addSprite(sprite);
+            Collections.sort(batches);
+        }
+    }
+
+    public void add(Block block) {
+        boolean added = false;
+        for (RenderBatch batch : batches) {
+            if (batch.getHasRoom() && batch.getZIndex() == 0 && !batch.getIsSpriteBatch()) {
+                Texture tex = block.getTexture();
+                if (tex == null || (batch.getHasTexture(tex) || batch.getHasTextureRoom())) {
+                    batch.addBlock(block);
+                    added = true;
+                    break;
+                }
+            }
+        }
+
+        if (!added) {
+            RenderBatch newBatch = new RenderBatch(MAX_BATCH_SIZE, 0, false);
+            newBatch.start();
+            batches.add(newBatch);
+            newBatch.addBlock(block);
             Collections.sort(batches);
         }
     }

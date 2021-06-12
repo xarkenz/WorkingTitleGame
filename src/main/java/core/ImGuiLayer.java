@@ -1,4 +1,4 @@
-package jade;
+package core;
 
 import editor.GameViewPanel;
 import editor.PropertiesPanel;

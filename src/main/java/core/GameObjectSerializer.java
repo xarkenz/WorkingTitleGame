@@ -1,4 +1,4 @@
-package jade;
+package core;
 
 import com.google.gson.*;
 import components.Component;

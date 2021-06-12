@@ -1,7 +1,7 @@
 package util;
 
-import components.Sprite;
-import components.Spritesheet;
+import components.BlockSheet;
+import components.SpriteSheet;
 import renderer.Shader;
 import renderer.Texture;
 
@@ -12,7 +12,8 @@ import java.util.Map;
 public class AssetPool {
     private static Map<String, Shader> shaders = new HashMap<>();
     private static Map<String, Texture> textures = new HashMap<>();
-    private static Map<String, Spritesheet> spritesheets = new HashMap<>();
+    private static Map<String, SpriteSheet> spritesheets = new HashMap<>();
+    private static Map<String, BlockSheet> blocksheets = new HashMap<>();
 
     public static Shader getShader(String resourceName) {
         File file = new File(resourceName);
@@ -38,18 +39,33 @@ public class AssetPool {
         }
     }
 
-    public static void addSpritesheet(String resourceName, Spritesheet spritesheet) {
+    public static void addSpriteSheet(String resourceName, SpriteSheet spritesheet) {
         File file = new File(resourceName);
         if (!AssetPool.spritesheets.containsKey(file.getAbsolutePath())) {
             AssetPool.spritesheets.put(file.getAbsolutePath(), spritesheet);
         }
     }
 
-    public static Spritesheet getSpritesheet(String resourceName) {
+    public static void addBlockSheet(String resourceName, BlockSheet blocksheet) {
+        File file = new File(resourceName);
+        if (!AssetPool.blocksheets.containsKey(file.getAbsolutePath())) {
+            AssetPool.blocksheets.put(file.getAbsolutePath(), blocksheet);
+        }
+    }
+
+    public static SpriteSheet getSpritesheet(String resourceName) {
         File file = new File(resourceName);
         if (!AssetPool.spritesheets.containsKey(file.getAbsolutePath())) {
             assert false : "Error: Spritesheet '" + resourceName + "' not in AssetPool";
         }
         return AssetPool.spritesheets.getOrDefault(file.getAbsolutePath(), null);
+    }
+
+    public static BlockSheet getBlocksheet(String resourceName) {
+        File file = new File(resourceName);
+        if (!AssetPool.blocksheets.containsKey(file.getAbsolutePath())) {
+            assert false : "Error: Blocksheet '" + resourceName + "' not in AssetPool";
+        }
+        return AssetPool.blocksheets.getOrDefault(file.getAbsolutePath(), null);
     }
 }

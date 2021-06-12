@@ -1,8 +1,8 @@
 package components;
 
-import jade.GameObject;
-import jade.MouseListener;
-import jade.Window;
+import core.GameObject;
+import core.MouseListener;
+import core.Window;
 import util.Settings;
 
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
@@ -12,7 +12,7 @@ public class MouseControls extends Component {
 
     public void pickupObject(GameObject go) {
         this.holdingObject = go;
-        Window.getScene().addGameObjectToScene(go);
+        Window.getScene().addGameObject(go);
     }
 
     public void place() {

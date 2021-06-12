@@ -1,0 +1,26 @@
+{
+  "format": "block_states",
+  "texture_size": [16, 16],
+  "textures": [
+    {
+      "coordinates": [0, 0],
+      "attribute": "shape",
+      "value": "left"
+    },
+    {
+      "coordinates": [1, 0],
+      "attribute": "shape",
+      "value": "right"
+    },
+    {
+      "coordinates": [2, 0],
+      "attribute": "shape",
+      "value": "center"
+    },
+    {
+      "coordinates": [3, 0],
+      "attribute": "shape",
+      "value": "center"
+    }
+  ]
+}

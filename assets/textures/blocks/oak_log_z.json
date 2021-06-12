@@ -1,0 +1,38 @@
+{
+  "format": "connected_quads_layered",
+  "texture_size": [16, 16],
+  "textures": [
+    {
+      "coordinates": [0, 0],
+      "shape": "outward_corners"
+    },
+    {
+      "coordinates": [1, 0],
+      "shape": "horizontal"
+    },
+    {
+      "coordinates": [2, 0],
+      "shape": "vertical"
+    },
+    {
+      "coordinates": [3, 0],
+      "shape": "inward_corners"
+    },
+    {
+      "coordinates": [0, 1],
+      "shape": "fill_outward_corners"
+    },
+    {
+      "coordinates": [1, 1],
+      "shape": "fill_horizontal"
+    },
+    {
+      "coordinates": [2, 1],
+      "shape": "fill_vertical"
+    },
+    {
+      "coordinates": [3, 1],
+      "shape": "fill_inward_corners"
+    }
+  ]
+}

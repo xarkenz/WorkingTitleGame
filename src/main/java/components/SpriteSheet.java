@@ -6,15 +6,15 @@ import renderer.Texture;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Spritesheet {
+public class SpriteSheet {
 
     private Texture texture;
     private List<Sprite> sprites;
 
-    public Spritesheet(Texture texture, int spriteWidth, int spriteHeight, int numSprites, int spacing) {
+    public SpriteSheet(Texture texture, int spriteWidth, int spriteHeight, int numSprites) {
         this.sprites = new ArrayList<>();
-
         this.texture = texture;
+
         int currentX = 0;
         int currentY = texture.getHeight() - spriteHeight;
         for (int i=0; i < numSprites; i++) {
@@ -29,6 +29,7 @@ public class Spritesheet {
                     new Vector2f(leftX, bottomY),
                     new Vector2f(leftX, topY)
             };
+
             Sprite sprite = new Sprite();
             sprite.setTexture(this.texture);
             sprite.setTexCoords(texCoords);
@@ -36,10 +37,10 @@ public class Spritesheet {
             sprite.setHeight(spriteHeight);
             this.sprites.add(sprite);
 
-            currentX += spriteWidth + spacing;
+            currentX += spriteWidth;
             if (currentX >= texture.getWidth()) {
                 currentX = 0;
-                currentY -= spriteHeight + spacing;
+                currentY -= spriteHeight;
             }
         }
     }

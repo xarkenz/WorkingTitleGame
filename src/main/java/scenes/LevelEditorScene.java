@@ -3,19 +3,14 @@ package scenes;
 import components.*;
 import imgui.ImGui;
 import imgui.ImVec2;
-import jade.*;
+import core.*;
 import org.joml.Vector2f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
-import renderer.DebugDraw;
-import scenes.Scene;
+import org.joml.Vector2i;
 import util.AssetPool;
 
 public class LevelEditorScene extends Scene {
 
-    private GameObject obj1;
-    private GameObject obj2;
-    private Spritesheet sprites;
+    private SpriteSheet sprites;
 
     GameObject levelEditorContainer = new GameObject("LevelEditor", new Transform(new Vector2f()), 0);
 
@@ -27,7 +22,7 @@ public class LevelEditorScene extends Scene {
     public void init() {
         loadResources();
         sprites = AssetPool.getSpritesheet("assets/textures/test/test_tiles.png");
-        Spritesheet gizmos = AssetPool.getSpritesheet("assets/textures/test/gizmos.png");
+
 
         this.camera = new Camera(new Vector2f(0, 0));
 
@@ -40,11 +35,54 @@ public class LevelEditorScene extends Scene {
 
     private void loadResources() {
         AssetPool.getShader("assets/shaders/Default.glsl");
-        AssetPool.getTexture("assets/textures/test/blend_test_2.png");
-        AssetPool.addSpritesheet("assets/textures/test/gizmos.png",
-                new Spritesheet(AssetPool.getTexture("assets/textures/test/gizmos.png"), 24, 48, 3, 0));
-        AssetPool.addSpritesheet("assets/textures/test/test_tiles.png",
-                new Spritesheet(AssetPool.getTexture("assets/textures/test/test_tiles.png"), 16, 16, 81, 0));
+        AssetPool.addSpriteSheet("assets/textures/test/test_tiles.png",
+                new SpriteSheet(AssetPool.getTexture("assets/textures/test/test_tiles.png"), 16, 16, 81));
+        String name = "sandstone";
+        AssetPool.addBlockSheet("assets/textures/blocks/" + name + ".png",
+                new BlockSheet(AssetPool.getTexture("assets/textures/blocks/" + name + ".png"), name, 16, 16, 5));
+        Vector2i[] positions0 = {
+                new Vector2i(10, 10),
+                new Vector2i(11, 10),
+                new Vector2i(10, 9),
+                new Vector2i(11, 9),
+                new Vector2i(10, 11),
+                new Vector2i(11, 12),
+                new Vector2i(12, 9),
+                new Vector2i(12, 10),
+        };
+        for (Vector2i pos : positions0) {
+            this.addBlock(new Block(name, pos));
+        }
+        name = "sand";
+        AssetPool.addBlockSheet("assets/textures/blocks/" + name + ".png",
+                new BlockSheet(AssetPool.getTexture("assets/textures/blocks/" + name + ".png"), name, 16, 16, 5));
+        Vector2i[] positions1 = {
+                new Vector2i(11, 13),
+                new Vector2i(10, 13),
+                new Vector2i(10, 14),
+                new Vector2i(11, 14),
+                new Vector2i(11, 11),
+                new Vector2i(10, 12),
+                new Vector2i(12, 11),
+                new Vector2i(12, 12),
+                new Vector2i(12, 13),
+                new Vector2i(12, 14),
+        };
+        for (Vector2i pos : positions1) {
+            this.addBlock(new Block(name, pos));
+        }
+        name = "oak_log_y";
+        AssetPool.addBlockSheet("assets/textures/blocks/" + name + ".png",
+                new BlockSheet(AssetPool.getTexture("assets/textures/blocks/" + name + ".png"), name, 16, 16, 5));
+        Vector2i[] positions2 = {
+                new Vector2i(11, 15),
+                new Vector2i(11, 16),
+                new Vector2i(11, 17),
+                new Vector2i(11, 18),
+        };
+        for (Vector2i pos : positions2) {
+            this.addBlock(new Block(name, pos));
+        }
 
         for (GameObject go : gameObjects) {
             if (go.getComponent(SpriteRenderer.class) != null) {
@@ -63,6 +101,9 @@ public class LevelEditorScene extends Scene {
 
         for (GameObject go : this.gameObjects) {
             go.update(dt);
+        }
+        for (Block block : this.blocks.values()) {
+            block.update(dt);
         }
     }
 

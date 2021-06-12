@@ -1,6 +1,5 @@
-package jade;
+package core;
 
-import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 import renderer.*;
@@ -31,7 +30,7 @@ public class Window {
     private Window() {
         this.width = 1920;
         this.height = 1080;
-        this.title = "please give name i need one";
+        this.title = "idk";
         r = 1;
         g = 1;
         b = 1;
@@ -169,9 +168,9 @@ public class Window {
             glClear(GL_COLOR_BUFFER_BIT);
 
             if (dt >= 0) {
-                DebugDraw.draw();
                 Renderer.bindShader(defaultShader);
                 currentScene.update(dt);
+                DebugDraw.draw();
                 currentScene.render();
             }
 

@@ -1,7 +1,8 @@
 package renderer;
 
+import components.Block;
 import components.SpriteRenderer;
-import jade.Window;
+import core.Window;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
@@ -34,7 +35,8 @@ public class RenderBatch implements Comparable<RenderBatch> {
     private final int ENTITY_ID_OFFSET = TEX_ID_OFFSET + TEX_ID_SIZE * Float.BYTES;
 
     private SpriteRenderer[] sprites;
-    private int numSprites;
+    private Block[] blocks;
+    private int numPolygons;
     private boolean hasRoom;
     private float[] vertices;
     private int[] texSlots = {0, 1, 2, 3, 4, 5, 6, 7};
@@ -43,16 +45,22 @@ public class RenderBatch implements Comparable<RenderBatch> {
     private int vaoID, vboID;
     private int maxBatchSize;
     private int zIndex;
+    private boolean isSpriteBatch;
 
-    public RenderBatch(int maxBatchSize, int zIndex) {
+    public RenderBatch(int maxBatchSize, int zIndex, boolean isSpriteBatch) {
         this.zIndex = zIndex;
-        this.sprites = new SpriteRenderer[maxBatchSize];
+        this.isSpriteBatch = isSpriteBatch;
+        if (isSpriteBatch) {
+            this.sprites = new SpriteRenderer[maxBatchSize];
+        } else {
+            this.blocks = new Block[maxBatchSize];
+        }
         this.maxBatchSize = maxBatchSize;
 
         // 4 vertices quads
         vertices = new float[maxBatchSize * 4 * VERTEX_SIZE];
 
-        this.numSprites = 0;
+        this.numPolygons = 0;
         this.hasRoom = true;
         this.textures = new ArrayList<>();
     }
@@ -65,7 +73,7 @@ public class RenderBatch implements Comparable<RenderBatch> {
         // Allocate space for vertices
         vboID = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vboID);
-        glBufferData(GL_ARRAY_BUFFER, vertices.length * Float.BYTES, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, (long) vertices.length * Float.BYTES, GL_DYNAMIC_DRAW);
 
         // Create and upload indices buffer
         int eboID = glGenBuffers();
@@ -91,10 +99,12 @@ public class RenderBatch implements Comparable<RenderBatch> {
     }
 
     public void addSprite(SpriteRenderer spr) {
+        assert this.isSpriteBatch : "Attempted to add a sprite to a block batch";
+
         // Get index and add renderObject
-        int index = this.numSprites;
+        int index = this.numPolygons;
         this.sprites[index] = spr;
-        this.numSprites++;
+        this.numPolygons++;
 
         if (spr.getTexture() != null) {
             if (!textures.contains(spr.getTexture())) {
@@ -103,21 +113,56 @@ public class RenderBatch implements Comparable<RenderBatch> {
         }
 
         // Add properties to local vertices array
-        loadVertexProperties(index);
+        loadSpriteVertexProperties(index);
 
-        if(numSprites >= this.maxBatchSize) {
+        if (this.numPolygons >= this.maxBatchSize) {
+            this.hasRoom = false;
+        }
+    }
+
+    public void addBlock(Block block) {
+        assert !this.isSpriteBatch : "Attempted to add a block to a sprite batch";
+
+        // Get index and add
+        int index = this.numPolygons;
+        this.blocks[index] = block;
+        this.numPolygons += 4;
+
+        if (block.getTexture() != null) {
+            if (!textures.contains(block.getTexture())) {
+                textures.add(block.getTexture());
+            }
+        }
+
+        // Add properties to local vertices array
+        loadBlockVertexProperties(index);
+
+        if (this.numPolygons >= this.maxBatchSize) {
             this.hasRoom = false;
         }
     }
 
     public void render() {
         boolean rebufferData = false;
-        for (int i=0; i < numSprites; i++) {
-            SpriteRenderer spr = sprites[i];
-            if (spr.isDirty()) {
-                loadVertexProperties(i);
-                spr.setClean();
-                rebufferData = true;
+        for (int i=0; i < numPolygons; i++) {
+            if (this.isSpriteBatch) {
+                if (sprites[i] != null) {
+                    SpriteRenderer spr = sprites[i];
+                    if (spr.getDirty()) {
+                        loadSpriteVertexProperties(i);
+                        spr.setDirty(false);
+                        rebufferData = true;
+                    }
+                }
+            } else {
+                if (blocks[i] != null) {
+                    Block block = blocks[i];
+                    if (block.getDirty()) {
+                        loadBlockVertexProperties(i);
+                        block.setDirty(false);
+                        rebufferData = true;
+                    }
+                }
             }
         }
         if (rebufferData) {
@@ -139,20 +184,22 @@ public class RenderBatch implements Comparable<RenderBatch> {
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
 
-        glDrawElements(GL_TRIANGLES, this.numSprites * 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, this.numPolygons * 6, GL_UNSIGNED_INT, 0);
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
         glBindVertexArray(0);
 
-        for (int i=0; i < textures.size(); i++) {
-            textures.get(i).unbind();
+        for (Texture texture : textures) {
+            texture.unbind();
         }
 
         shader.detach();
     }
 
-    private void loadVertexProperties(int index) {
+    private void loadSpriteVertexProperties(int index) {
+        assert this.isSpriteBatch : "Attempted to load sprite vertices in block batch";
+
         SpriteRenderer sprite = this.sprites[index];
 
         // Find offset within array (4 vertices per sprite)
@@ -221,13 +268,92 @@ public class RenderBatch implements Comparable<RenderBatch> {
         }
     }
 
+    private void loadBlockVertexProperties(int index) {
+        assert this.isSpriteBatch : "Attempted to load block vertices in sprite batch";
+
+        Block block = this.blocks[index];
+
+        // Find offset within array (16 vertices per block)
+        int offset = index * 4 * VERTEX_SIZE;
+
+        int texId = 0;
+        if (block.getTexture() != null) {
+            for (int i = 0; i < textures.size(); i++) {
+                if (textures.get(i).equals(block.getTexture())) {
+                    texId = i + 1;
+                    break;
+                }
+            }
+        }
+
+        // Add vertexes with the appropriate properties
+        Vector2f[] offsets = {new Vector2f(), new Vector2f(), new Vector2f(), new Vector2f()};
+
+        for (int j=0; j < 4; j++) {
+            Vector2f[] texCoords = Block.getQuad(block.getName(), j, block.getShape(j)).getTexCoords();
+
+            switch(j) {
+                case 0:
+                    offsets[0].set(0.5f, 1f);
+                    offsets[1].set(0.5f, 0.5f);
+                    offsets[2].set(0f, 0.5f);
+                    offsets[3].set(0f, 1f);
+                    break;
+                case 1:
+                    offsets[0].set(1f, 1f);
+                    offsets[1].set(1f, 0.5f);
+                    offsets[2].set(0.5f, 0.5f);
+                    offsets[3].set(0.5f, 1f);
+                    break;
+                case 2:
+                    offsets[0].set(0.5f, 0.5f);
+                    offsets[1].set(0.5f, 0f);
+                    offsets[2].set(0f, 0f);
+                    offsets[3].set(0f, 0.5f);
+                    break;
+                case 3:
+                    offsets[0].set(1f, 0.5f);
+                    offsets[1].set(1f, 0f);
+                    offsets[2].set(0.5f, 0f);
+                    offsets[3].set(0.5f, 0.5f);
+                    break;
+            }
+
+            for (int i = 0; i < 4; i++) {
+                Vector4f currentPos = new Vector4f((block.getPosition().x + offsets[i].x) * 32,
+                        (block.getPosition().y + offsets[i].y) * 32, 0, 1);
+
+                // Load position
+                vertices[offset] = currentPos.x;
+                vertices[offset + 1] = currentPos.y;
+
+                // Load white color
+                vertices[offset + 2] = 1f;
+                vertices[offset + 3] = 1f;
+                vertices[offset + 4] = 1f;
+                vertices[offset + 5] = 1f;
+
+                // Load texture coordinates
+                vertices[offset + 6] = texCoords[i].x;
+                vertices[offset + 7] = texCoords[i].y;
+
+                // Load texture ID
+                vertices[offset + 8] = texId;
+
+                // Load UID 0 (block)
+                vertices[offset + 9] = 0;
+
+                offset += VERTEX_SIZE;
+            }
+        }
+    }
+
     private int[] generateIndices() {
         // 6 indices per quad (3 per triangle)
         int[] elements = new int[6 * maxBatchSize];
         for (int i=0; i < maxBatchSize; i++) {
             loadElementIndices(elements, i);
         }
-
         return elements;
     }
 
@@ -235,7 +361,7 @@ public class RenderBatch implements Comparable<RenderBatch> {
         int offsetArrayIndex = 6 * index;
         int offset = 4 * index;
 
-        // 3, 2, 0, 0, 2, 1      7, 6, 4, 4, 6, 5
+        // 3, 2, 0, 0, 2, 1
         // Triangle 1
         elements[offsetArrayIndex] = offset + 3;
         elements[offsetArrayIndex + 1] = offset + 2;
@@ -247,24 +373,28 @@ public class RenderBatch implements Comparable<RenderBatch> {
         elements[offsetArrayIndex + 5] = offset + 1;
     }
 
-    public boolean hasRoom() {
+    public boolean getHasRoom() {
         return this.hasRoom;
     }
 
-    public boolean hasTextureRoom() {
+    public boolean getHasTextureRoom() {
         return this.textures.size() < 8;
     }
 
-    public boolean hasTexture(Texture tex) {
+    public boolean getHasTexture(Texture tex) {
         return this.textures.contains(tex);
     }
 
-    public int zIndex() {
+    public boolean getIsSpriteBatch() {
+        return this.isSpriteBatch;
+    }
+
+    public int getZIndex() {
         return this.zIndex;
     }
 
     @Override
     public int compareTo(RenderBatch o) {
-        return Integer.compare(this.zIndex, o.zIndex());
+        return Integer.compare(this.zIndex, o.getZIndex());
     }
 }

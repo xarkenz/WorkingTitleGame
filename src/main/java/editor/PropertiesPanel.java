@@ -1,8 +1,8 @@
 package editor;
 
 import imgui.ImGui;
-import jade.GameObject;
-import jade.MouseListener;
+import core.GameObject;
+import core.MouseListener;
 import renderer.PickingTexture;
 import scenes.Scene;
 

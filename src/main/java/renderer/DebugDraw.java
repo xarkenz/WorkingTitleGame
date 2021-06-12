@@ -1,6 +1,6 @@
 package renderer;
 
-import jade.Window;
+import core.Window;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import util.AssetPool;
