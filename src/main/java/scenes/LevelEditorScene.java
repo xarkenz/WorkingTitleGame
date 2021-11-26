@@ -1,18 +1,30 @@
 package scenes;
 
+import blocks.*;
 import components.*;
+import entities.Entity;
+import entities.Player;
 import imgui.ImGui;
 import imgui.ImVec2;
 import core.*;
+import org.joml.Vector2d;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import util.AssetPool;
+import util.Settings;
+
+import java.util.HashMap;
+
+import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
 
 public class LevelEditorScene extends Scene {
 
     private SpriteSheet sprites;
+    private GameObject levelEditorContainer = this.createGameObject("level_editor");
+    private String holdingBlock = null;
+    private float interactionDelay = 0;
 
-    GameObject levelEditorContainer = new GameObject("LevelEditor", new Transform(new Vector2f()), 0);
+    private boolean showGrid = true;
 
     public LevelEditorScene() {
 
@@ -21,26 +33,22 @@ public class LevelEditorScene extends Scene {
     @Override
     public void init() {
         loadResources();
-        sprites = AssetPool.getSpritesheet("assets/textures/test/test_tiles.png");
-
-
+        this.sprites = AssetPool.getSpritesheet("assets/textures/test/test_tiles.png");
+        this.holdingBlock = "dirt";
         this.camera = new Camera(new Vector2f(0, 0));
 
-        levelEditorContainer.addComponent(new MouseControls());
-        levelEditorContainer.addComponent(new GridLines());
-        levelEditorContainer.addComponent(new EditorCamera(this.camera));
-
-        levelEditorContainer.start();
-    }
-
-    private void loadResources() {
-        AssetPool.getShader("assets/shaders/Default.glsl");
-        AssetPool.addSpriteSheet("assets/textures/test/test_tiles.png",
-                new SpriteSheet(AssetPool.getTexture("assets/textures/test/test_tiles.png"), 16, 16, 81));
-        String name = "sandstone";
-        AssetPool.addBlockSheet("assets/textures/blocks/" + name + ".png",
-                new BlockSheet(AssetPool.getTexture("assets/textures/blocks/" + name + ".png"), name, 16, 16, 5));
         Vector2i[] positions0 = {
+                new Vector2i(10, 7),
+                new Vector2i(11, 7),
+                new Vector2i(12, 7),
+                new Vector2i(10, 8),
+                new Vector2i(11, 8),
+                new Vector2i(12, 8),
+        };
+        for (Vector2i pos : positions0) {
+            this.addBlock(new Stone(pos, new HashMap<>()));
+        }
+        Vector2i[] positions1 = {
                 new Vector2i(10, 10),
                 new Vector2i(11, 10),
                 new Vector2i(10, 9),
@@ -50,13 +58,10 @@ public class LevelEditorScene extends Scene {
                 new Vector2i(12, 9),
                 new Vector2i(12, 10),
         };
-        for (Vector2i pos : positions0) {
-            this.addBlock(new Block(name, pos));
+        for (Vector2i pos : positions1) {
+            this.addBlock(new Sandstone(pos, new HashMap<>()));
         }
-        name = "sand";
-        AssetPool.addBlockSheet("assets/textures/blocks/" + name + ".png",
-                new BlockSheet(AssetPool.getTexture("assets/textures/blocks/" + name + ".png"), name, 16, 16, 5));
-        Vector2i[] positions1 = {
+        Vector2i[] positions2 = {
                 new Vector2i(11, 13),
                 new Vector2i(10, 13),
                 new Vector2i(10, 14),
@@ -68,22 +73,27 @@ public class LevelEditorScene extends Scene {
                 new Vector2i(12, 13),
                 new Vector2i(12, 14),
         };
-        for (Vector2i pos : positions1) {
-            this.addBlock(new Block(name, pos));
-        }
-        name = "oak_log_y";
-        AssetPool.addBlockSheet("assets/textures/blocks/" + name + ".png",
-                new BlockSheet(AssetPool.getTexture("assets/textures/blocks/" + name + ".png"), name, 16, 16, 5));
-        Vector2i[] positions2 = {
-                new Vector2i(11, 15),
-                new Vector2i(11, 16),
-                new Vector2i(11, 17),
-                new Vector2i(11, 18),
-        };
         for (Vector2i pos : positions2) {
-            this.addBlock(new Block(name, pos));
+            this.addBlock(new Sand(pos, new HashMap<>()));
         }
 
+        this.addEntity(new Player(new Vector2d(250, 400), new Vector2d(150, 512)));
+
+        levelEditorContainer.addComponent(new MouseControls());
+        if (this.showGrid) levelEditorContainer.addComponent(new GridLines());
+        levelEditorContainer.addComponent(new EditorCamera(this.camera));
+
+        levelEditorContainer.start();
+    }
+
+    private void loadResources() {
+        AssetPool.getShader("assets/shaders/Default.glsl");
+        AssetPool.addSpriteSheet("assets/textures/test/test_tiles.png",
+                new SpriteSheet(AssetPool.getTexture("assets/textures/test/test_tiles.png"), 16, 16, 81));
+        for (String name: Block.BLOCK_NAMES) {
+            AssetPool.addBlockSheet("assets/textures/blocks/" + name + ".png",
+                    new BlockSheet(AssetPool.getTexture("assets/textures/blocks/" + name + ".png"), name));
+        }
         for (GameObject go : gameObjects) {
             if (go.getComponent(SpriteRenderer.class) != null) {
                 SpriteRenderer spr = go.getComponent(SpriteRenderer.class);
@@ -102,8 +112,30 @@ public class LevelEditorScene extends Scene {
         for (GameObject go : this.gameObjects) {
             go.update(dt);
         }
+        for (Entity entity : this.entities) {
+            entity.update(dt);
+        }
         for (Block block : this.blocks.values()) {
             block.update(dt);
+        }
+
+        if (MouseListener.mouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
+            if (this.interactionDelay <= 0f) {
+                Vector2i worldPos = new Vector2i((int) (MouseListener.getWorldX() / Settings.GRID_SIZE), (int) (MouseListener.getWorldY() / Settings.GRID_SIZE));
+                if (this.blocks.get(worldPos) == null) {
+                    if (this.holdingBlock != null) {
+                        Block newBlock = Block.createBlock(this.holdingBlock, worldPos, new HashMap<>());
+                        this.addBlock(newBlock);
+                    }
+                } else {
+                    this.removeBlock(this.blocks.get(worldPos));
+                }
+                this.interactionDelay = 0.3f;
+            } else {
+                this.interactionDelay -= dt;
+            }
+        } else {
+            this.interactionDelay = 0f;
         }
     }
 
@@ -138,7 +170,7 @@ public class LevelEditorScene extends Scene {
             ImGui.pushID(i);
             if (ImGui.imageButton(id, spriteWidth, spriteHeight, texCoords[2].x, texCoords[0].y, texCoords[0].x, texCoords[2].y)) {
                 GameObject object = Prefabs.generateSpriteObject(sprite, 32, 32);
-                levelEditorContainer.getComponent(MouseControls.class).pickupObject(object);
+                levelEditorContainer.getComponent(MouseControls.class).bindObject(object);
             }
             ImGui.popID();
 

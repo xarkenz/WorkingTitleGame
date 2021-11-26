@@ -2,17 +2,19 @@ package core;
 
 import components.Sprite;
 import components.SpriteRenderer;
+import components.Transform;
 import org.joml.Vector2f;
 
 public class Prefabs {
 
     public static GameObject generateSpriteObject(Sprite sprite, float sizeX, float sizeY) {
-        GameObject block = new GameObject("Sprite_Object_Gen",
-                new Transform(new Vector2f(), new Vector2f(sizeX, sizeY)), 1);
+        GameObject obj = Window.getScene().createGameObject("Sprite_Object_Gen");
+        obj.transform.scale.x = sizeX;
+        obj.transform.scale.y = sizeY;
         SpriteRenderer renderer = new SpriteRenderer();
         renderer.setSprite(sprite);
-        block.addComponent(renderer);
+        obj.addComponent(renderer);
 
-        return block;
+        return obj;
     }
 }

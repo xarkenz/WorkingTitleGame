@@ -16,7 +16,7 @@ import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 
 public class DebugDraw {
-    private static int MAX_LINES = 500;
+    private static int MAX_LINES = 5000;
 
     private static List<Line> lines = new ArrayList<>();
     // 6 floats per vertex, 2 vertices per line
@@ -36,7 +36,7 @@ public class DebugDraw {
         // Create VBO
         vboID = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vboID);
-        glBufferData(GL_ARRAY_BUFFER, vertexArray.length * Float.BYTES, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, (long) vertexArray.length * Float.BYTES, GL_DYNAMIC_DRAW);
 
         // Enable vertex array attributes
         glVertexAttribPointer(0, 3, GL_FLOAT, false, 6 * Float.BYTES, 0);
@@ -56,32 +56,34 @@ public class DebugDraw {
 
         // Remove dead lines
         for (int i=0; i < lines.size(); i++) {
-            if (lines.get(i).beginFrame() < 0) {
+            if (lines.get(i).beginFrame() <= 0) {
                 lines.remove(i);
                 i--;
             }
         }
     }
 
-    public static void draw() {
+    public static void draw(boolean isBackground) {
         if (lines.size() <= 0) return;
 
         int index = 0;
         for (Line line: lines) {
-            for (int i=0; i < 2; i++) {
-                Vector2f position = i == 0 ? line.getFrom() : line.getTo();
-                Vector3f color = line.getColor();
+            if (line.isBackground() == isBackground) {
+                for (int i = 0; i < 2; i++) {
+                    Vector2f position = i == 0 ? line.getFrom() : line.getTo();
+                    Vector3f color = line.getColor();
 
-                // Load position
-                vertexArray[index] = position.x;
-                vertexArray[index + 1] = position.y;
-                vertexArray[index + 2] = -10.0f;
+                    // Load position
+                    vertexArray[index] = position.x;
+                    vertexArray[index + 1] = position.y;
+                    vertexArray[index + 2] = -10.0f;
 
-                // Load color
-                vertexArray[index + 3] = color.x;
-                vertexArray[index + 4] = color.y;
-                vertexArray[index + 5] = color.z;
-                index += 6;
+                    // Load color
+                    vertexArray[index + 3] = color.x;
+                    vertexArray[index + 4] = color.y;
+                    vertexArray[index + 5] = color.z;
+                    index += 6;
+                }
             }
         }
 
@@ -90,8 +92,8 @@ public class DebugDraw {
 
         // Use shader
         shader.use();
-        shader.uploadMat4f("uProjection", Window.getScene().camera().getProjectionMatrix());
-        shader.uploadMat4f("uView", Window.getScene().camera().getViewMatrix());
+        shader.uploadMat4f("uProjection", Window.getScene().getCamera().getProjectionMatrix());
+        shader.uploadMat4f("uView", Window.getScene().getCamera().getViewMatrix());
 
         // Bind VAO
         glBindVertexArray(vaoID);
@@ -108,28 +110,31 @@ public class DebugDraw {
 
         // Detach shader
         shader.detach();
+
+        // Clear vertex array (removes stray lines, so they aren't drawn again)
+        Arrays.fill(vertexArray, 0);
     }
 
-    // Line
+    public static void addLine(Vector2f from, Vector2f to, Vector3f color, int lifetime, boolean isBackground) {
+        if (lines.size() >= MAX_LINES) return;
+        DebugDraw.lines.add(new Line(from, to, color, lifetime, isBackground));
+    }
 
     public static void addLine(Vector2f from, Vector2f to, Vector3f color, int lifetime) {
-        if (lines.size() >= MAX_LINES) return;
-        DebugDraw.lines.add(new Line(from, to, color, lifetime));
+        addLine(from, to, color, lifetime, false);
     }
 
     public static void addLine(Vector2f from, Vector2f to, Vector3f color) {
-        addLine(from, to, color, 1);
+        addLine(from, to, color, 1, false);
     }
 
     public static void addLine(Vector2f from, Vector2f to) {
-        addLine(from, to, new Vector3f(0, 0, 1), 1);
+        addLine(from, to, new Vector3f(0, 0, 1), 1, false);
     }
 
-    // Rect
-
     public static void addRect(Vector2f center, Vector2f dimensions, Vector3f color, float rotation, int lifetime) {
-        Vector2f min = new Vector2f(center).sub(new Vector2f(dimensions).div(2.0f));
-        Vector2f max = new Vector2f(center).add(new Vector2f(dimensions).div(2.0f));
+        Vector2f min = new Vector2f(center).sub(new Vector2f(dimensions).div(2));
+        Vector2f max = new Vector2f(center).add(new Vector2f(dimensions).div(2));
 
         Vector2f[] vertices = {
                 new Vector2f(min.x, min.y), new Vector2f(min.x, max.y),
@@ -159,8 +164,6 @@ public class DebugDraw {
     public static void addRect(Vector2f center, Vector2f dimensions) {
         addRect(center, dimensions, new Vector3f(0, 0, 1), 0.0f, 1);
     }
-
-    // Circle
 
     public static void addCircle(Vector2f center, float radius, Vector3f color, int lifetime, int sides) {
         Vector2f[] points = new Vector2f[sides];

@@ -12,7 +12,7 @@ public class MouseListener {
     private static MouseListener instance;
     private double scrollX, scrollY;
     private double xPos, yPos, lastX, lastY, worldX, worldY, lastWorldX, lastWorldY;
-    private boolean mouseButtonPressed[] = new boolean[3];
+    private boolean[] mouseButtonPressed = new boolean[3];
     private int mouseButtonsDown = 0;
     private boolean isDragging;
 
@@ -74,10 +74,12 @@ public class MouseListener {
         get().scrollY = 0;
         get().lastX = get().xPos;
         get().lastY = get().yPos;
+        get().lastWorldX = get().worldX;
+        get().lastWorldY = get().worldY;
     }
 
     public static void calcOrtho() {
-        Camera camera = Window.getScene().camera();
+        Camera camera = Window.getScene().getCamera();
 
         float currentX = getX() - get().gameViewportPos.x;
         float currentY = getY() - get().gameViewportPos.y;
@@ -142,37 +144,21 @@ public class MouseListener {
 
     public static float getScreenX() {
         float currentX = getX() - get().gameViewportPos.x;
-        currentX = (currentX / get().gameViewportSize.x) * (float)Settings.DISPLAY_WIDTH;
+        currentX = (currentX / get().gameViewportSize.x) * (float) Settings.DISPLAY_WIDTH;
         return currentX;
     }
 
     public static float getScreenY() {
         float currentY = getY() - get().gameViewportPos.y;
-        currentY = (float)Settings.DISPLAY_HEIGHT - ((currentY / get().gameViewportSize.y) * (float)Settings.DISPLAY_HEIGHT);
+        currentY = (float) Settings.DISPLAY_HEIGHT - ((currentY / get().gameViewportSize.y) * (float) Settings.DISPLAY_HEIGHT);
         return currentY;
     }
 
-    public static float getOrthoX() {
-//        float currentX = getX() - get().gameViewportPos.x;
-//        currentX = (currentX / get().gameViewportSize.x) * 2.0f - 1.0f;
-//        Vector4f tmp = new Vector4f(currentX, 0, 0, 1);
-//        Camera camera = Window.getScene().camera();
-//        Matrix4f viewProjection = new Matrix4f();
-//        camera.getInverseView().mul(camera.getInverseProjection(), viewProjection);
-//        tmp.mul(viewProjection);
-//        return tmp.x;
+    public static float getWorldX() {
         return (float)get().worldX;
     }
 
-    public static float getOrthoY() {
-//        float currentY = getY() - get().gameViewportPos.y;
-//        currentY = -((currentY / get().gameViewportSize.y) * 2.0f - 1.0f);
-//        Vector4f tmp = new Vector4f(0, currentY, 0, 1);
-//        Camera camera = Window.getScene().camera();
-//        Matrix4f viewProjection = new Matrix4f();
-//        camera.getInverseView().mul(camera.getInverseProjection(), viewProjection);
-//        tmp.mul(viewProjection);
-//        return tmp.y;
+    public static float getWorldY() {
         return (float)get().worldY;
     }
 

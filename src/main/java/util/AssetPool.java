@@ -1,7 +1,7 @@
 package util;
 
-import components.BlockSheet;
-import components.SpriteSheet;
+import core.BlockSheet;
+import core.SpriteSheet;
 import renderer.Shader;
 import renderer.Texture;
 

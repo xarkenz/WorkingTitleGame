@@ -1,6 +1,6 @@
 package renderer;
 
-import components.Block;
+import blocks.Block;
 import components.SpriteRenderer;
 import core.GameObject;
 
@@ -27,9 +27,9 @@ public class Renderer {
     public void add(SpriteRenderer sprite) {
         boolean added = false;
         for (RenderBatch batch : batches) {
-            if (batch.getHasRoom() && batch.getZIndex() == sprite.gameObject.zIndex() && batch.getIsSpriteBatch()) {
+            if (batch.hasRoom() && batch.getZIndex() == sprite.gameObject.transform.zIndex && batch.isSpriteBatch()) {
                 Texture tex = sprite.getTexture();
-                if (tex == null || (batch.getHasTexture(tex) || batch.getHasTextureRoom())) {
+                if (tex == null || (batch.hasTexture(tex) || batch.hasTextureRoom())) {
                     batch.addSprite(sprite);
                     added = true;
                     break;
@@ -38,7 +38,7 @@ public class Renderer {
         }
 
         if (!added) {
-            RenderBatch newBatch = new RenderBatch(MAX_BATCH_SIZE, sprite.gameObject.zIndex(), true);
+            RenderBatch newBatch = new RenderBatch(MAX_BATCH_SIZE, sprite.gameObject.transform.zIndex, true);
             newBatch.start();
             batches.add(newBatch);
             newBatch.addSprite(sprite);
@@ -49,9 +49,9 @@ public class Renderer {
     public void add(Block block) {
         boolean added = false;
         for (RenderBatch batch : batches) {
-            if (batch.getHasRoom() && batch.getZIndex() == 0 && !batch.getIsSpriteBatch()) {
+            if (batch.hasRoom() && batch.getZIndex() == 0 && !batch.isSpriteBatch()) {
                 Texture tex = block.getTexture();
-                if (tex == null || (batch.getHasTexture(tex) || batch.getHasTextureRoom())) {
+                if (tex == null || (batch.hasTexture(tex) || batch.hasTextureRoom())) {
                     batch.addBlock(block);
                     added = true;
                     break;
@@ -65,6 +65,13 @@ public class Renderer {
             batches.add(newBatch);
             newBatch.addBlock(block);
             Collections.sort(batches);
+        }
+    }
+
+    public void remove(Block block) {
+        for (RenderBatch batch : batches) {
+            // Only removes the block if it finds it, so we don't need to check if the batch has the block
+            batch.removeBlock(block);
         }
     }
 

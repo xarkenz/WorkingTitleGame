@@ -2,12 +2,14 @@ package scenes;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import components.Block;
+import blocks.Block;
 import components.Component;
 import components.ComponentSerializer;
+import components.Transform;
 import core.Camera;
 import core.GameObject;
 import core.GameObjectSerializer;
+import entities.Entity;
 import org.joml.Vector2i;
 import renderer.Renderer;
 
@@ -26,6 +28,7 @@ public abstract class Scene {
     protected Camera camera;
     private boolean isRunning = false;
     protected List<GameObject> gameObjects = new ArrayList<>();
+    protected List<Entity> entities = new ArrayList<>();
     protected HashMap<Vector2i, Block> blocks = new HashMap<>();
     protected boolean worldLoaded = false;
 
@@ -42,6 +45,10 @@ public abstract class Scene {
             go.start();
             this.renderer.add(go);
         }
+        for (Entity entity : entities) {
+            entity.start();
+//            this.renderer.add(entity);
+        }
         for (Block block : blocks.values()) {
             block.start();
             this.renderer.add(block);
@@ -49,11 +56,26 @@ public abstract class Scene {
         isRunning = true;
     }
 
+    public GameObject createGameObject(String name) {
+        GameObject go = new GameObject(name);
+        go.addComponent(new Transform());
+        go.transform = go.getComponent(Transform.class);
+        return go;
+    }
+
     public void addGameObject(GameObject go) {
         gameObjects.add(go);
         if (isRunning) {
             go.start();
             this.renderer.add(go);
+        }
+    }
+
+    public void addEntity(Entity entity) {
+        entities.add(entity);
+        if (isRunning) {
+            entity.start();
+//            this.renderer.add(entity);
         }
     }
 
@@ -65,6 +87,13 @@ public abstract class Scene {
         }
     }
 
+    public void removeBlock(Block block) {
+        blocks.remove(block.getPosition());
+        if (isRunning) {
+            this.renderer.remove(block);
+        }
+    }
+
     public GameObject getGameObject(int uid) {
         Optional<GameObject> result = this.gameObjects.stream()
                 .filter(gameObject -> gameObject.getUID() == uid)
@@ -72,10 +101,25 @@ public abstract class Scene {
         return result.orElse(null);
     }
 
+    public Entity getEntity(int uid) {
+        Optional<Entity> result = this.entities.stream()
+                .filter(entity -> entity.getUID() == uid)
+                .findFirst();
+        return result.orElse(null);
+    }
+
+    public Block getBlock(Vector2i pos) {
+        return this.blocks.get(pos);
+    }
+
+    public Block getBlock(int x, int y) {
+        return this.getBlock(new Vector2i(x, y));
+    }
+
     public abstract void update(float dt);
     public abstract void render();
 
-    public Camera camera() {
+    public Camera getCamera() {
         return this.camera;
     }
 
@@ -141,13 +185,5 @@ public abstract class Scene {
             Component.init(maxCompID);
             this.worldLoaded = true;
         }
-    }
-
-    public Block getBlock(Vector2i pos) {
-        return this.blocks.get(pos);
-    }
-
-    public Block getBlock(int x, int y) {
-        return this.getBlock(new Vector2i(x, y));
     }
 }

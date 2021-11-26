@@ -170,8 +170,9 @@ public class Window {
             if (dt >= 0) {
                 Renderer.bindShader(defaultShader);
                 currentScene.update(dt);
-                DebugDraw.draw();
+                DebugDraw.draw(true);
                 currentScene.render();
+                DebugDraw.draw(false);
             }
 
             this.framebuffer.unbind();
@@ -189,7 +190,7 @@ public class Window {
     }
 
     public static Scene getScene() {
-        return get().currentScene;
+        return currentScene;
     }
 
     public static int getWidth() {
