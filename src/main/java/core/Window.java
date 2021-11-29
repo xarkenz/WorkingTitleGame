@@ -3,9 +3,8 @@ package core;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 import renderer.*;
-import scenes.LevelEditorScene;
-import scenes.LevelScene;
-import scenes.Scene;
+import world.Overworld;
+import world.World;
 import util.AssetPool;
 import util.Settings;
 
@@ -25,34 +24,28 @@ public class Window {
     public float r, g, b, a;
 
     private static Window window;
-    private static Scene currentScene;
+    private static World currentWorld;
 
     private Window() {
         this.width = 1920;
         this.height = 1080;
-        this.title = "idk";
+        this.title = "WorkingTitleGame";
         r = 1;
         g = 1;
         b = 1;
         a = 1;
     }
 
-    public static void changeScene(int newScene) {
-        switch (newScene) {
-            case 0:
-                currentScene = new LevelEditorScene();
-                break;
-            case 1:
-                currentScene = new LevelScene();
-                break;
-            default:
-                assert false : "Unknown scene '" + newScene + "'";
-                break;
+    public static void changeWorld(int newWorld) {
+        if (newWorld == 0) {
+            currentWorld = new Overworld();
+        } else {
+            assert false : "Unknown world '" + newWorld + "'";
         }
 
-        currentScene.load();
-        currentScene.init();
-        currentScene.start();
+        currentWorld.load();
+        currentWorld.init();
+        currentWorld.start();
     }
 
     public static Window get() {
@@ -81,7 +74,7 @@ public class Window {
 
         // Initialize GLFW
         if (!glfwInit()) {
-            throw new IllegalStateException("Unable to initialize GLFW.");
+            throw new IllegalStateException("Failed to initialize GLFW.");
         }
 
         // Configure GLFW
@@ -130,7 +123,7 @@ public class Window {
         this.imGuiLayer = new ImGuiLayer(glfwWindow, pickingTexture);
         this.imGuiLayer.initImGui();
 
-        Window.changeScene(0);
+        Window.changeWorld(0);
     }
 
     public void loop() {
@@ -154,7 +147,7 @@ public class Window {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             Renderer.bindShader(pickingShader);
-            currentScene.render();
+            currentWorld.render();
 
             pickingTexture.disableWriting();
             glEnable(GL_BLEND);
@@ -169,28 +162,28 @@ public class Window {
 
             if (dt >= 0) {
                 Renderer.bindShader(defaultShader);
-                currentScene.update(dt);
+                currentWorld.update(dt);
                 DebugDraw.draw(true);
-                currentScene.render();
+                currentWorld.render();
                 DebugDraw.draw(false);
             }
 
             this.framebuffer.unbind();
 
-            this.imGuiLayer.update(dt, currentScene);
+            this.imGuiLayer.update(dt, currentWorld);
             glfwSwapBuffers(glfwWindow);
             MouseListener.endFrame();
 
-            endTime = (float)glfwGetTime();
+            endTime = (float) glfwGetTime();
             dt = endTime - beginTime;
             beginTime = endTime;
         }
 
-        currentScene.saveExit();
+        currentWorld.save();
     }
 
-    public static Scene getScene() {
-        return currentScene;
+    public static World getWorld() {
+        return currentWorld;
     }
 
     public static int getWidth() {

@@ -2,6 +2,7 @@ package renderer;
 
 import org.lwjgl.BufferUtils;
 
+import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
@@ -34,7 +35,7 @@ public class Texture {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
     }
 
-    public void init(String filePath) {
+    public void init(String filePath) throws FileNotFoundException {
         this.filePath = filePath;
 
         // Generate texture on GPU
@@ -65,10 +66,10 @@ public class Texture {
             } else if (channels.get(0) == 4) {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width.get(0), height.get(0), 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
             } else {
-                assert false : "Error: (Texture) Could not load image '" + filePath + "': Unexpected number of channels";
+                throw new FileNotFoundException("(Texture) Could not load image '" + filePath + "': Unexpected number of channels.");
             }
         } else {
-            assert false : "Error: (Texture) Could not load image '" + filePath + "'";
+            throw new FileNotFoundException("(Texture) Could not load image '" + filePath + "': Not found.");
         }
 
         stbi_image_free(image);
@@ -85,8 +86,7 @@ public class Texture {
     @Override
     public boolean equals(Object o) {
         if (o == null) return false;
-        if (!(o instanceof Texture)) return false;
-        Texture oTex = (Texture)o;
+        if (!(o instanceof Texture oTex)) return false;
         return oTex.getWidth() == this.width && oTex.getHeight() == this.height && oTex.getID() == this.texID
                 && oTex.getFilePath().equals(this.filePath);
     }

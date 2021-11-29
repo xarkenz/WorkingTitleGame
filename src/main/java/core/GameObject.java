@@ -1,7 +1,7 @@
 package core;
 
-import components.Component;
-import components.Transform;
+import component.Component;
+import component.Transform;
 import imgui.ImGui;
 
 import java.util.ArrayList;

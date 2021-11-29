@@ -86,25 +86,6 @@ public class CollisionBox {
         return !(x + w <= other.x || x >= other.x + other.w || y + h <= other.y || y >= other.y + other.h);
     }
 
-    /*public void collideSteps(List<CollisionBox> rects, double dt) {
-        double startY = y;
-        boolean collided = false;
-
-        if (vy < 0) {
-            for (; y > startY + vy; y--) {
-                for (CollisionBox rect : rects) {
-                    if (isTouching(rect)) {
-                        collided = true;
-
-                    }
-                }
-
-                if (collided)
-                    break;
-            }
-        }
-    }*/
-
     public CollisionBox getBroadPhase(double dt) {
         // Enclosed area where movement will occur in the current frame
         return new CollisionBox(
@@ -120,13 +101,12 @@ public class CollisionBox {
         return rect.isTouching(getBroadPhase(dt));
     }
 
-    public void collide(List<CollisionBox> rects, double dt) {
-        collide(rects, dt, false);
+    public boolean collide(List<CollisionBox> rects, double dt) {
+        return collide(rects, dt, false);
     }
 
-    public void collide(List<CollisionBox> rects, double dt, boolean collideOnce) {
-        double firstHit = 1;
-        boolean hitsXFirst = false;
+    public boolean collide(List<CollisionBox> rects, double dt, boolean collideOnce) {
+        Vector3d firstHit = new Vector3d(0, 0, 1);
 
         for (CollisionBox rect : rects) {
             if (!mightCollide(rect, dt))
@@ -137,65 +117,52 @@ public class CollisionBox {
             if (collision.z < 0 || collision.z > 1)
                 continue;
 
-            /*// Advance to time of collision
-            x += vx * collision.z * dt;
-            y += vy * collision.z * dt;
-
-            // Calculate new velocity after collision
-            double dot = (vx * collision.y + vy * collision.x) * (1 - timeUsed - collision.z);
-            setVelocity(dot * collision.y, dot * collision.x);
-
-            // Update and check timeUsed
-            timeUsed += collision.z;
-            if (timeUsed >= 1) {
-                break;
-            }*/
-
-            if (collision.z < firstHit) {
-                firstHit = collision.z;
-                hitsXFirst = collision.y == 0;
+            if (collision.z < firstHit.z) {
+                firstHit = collision;
             }
         }
 
-        if (firstHit >= 1)
-            return;
+        if (firstHit.z >= 1)
+            return false;
 
-        x += vx * dt * firstHit;
-        y += vy * dt * firstHit;
+        x += vx * dt * firstHit.z;
+        y += vy * dt * firstHit.z;
 
-        if (hitsXFirst)
+        if (firstHit.y == 0)
             vx = 0;
         else
             vy = 0;
 
         if (collideOnce)
-            return;
+            return firstHit.y == -1;
 
-        double secondHit = 1;
+        Vector3d secondHit = new Vector3d(0, 0, 1);
         for (CollisionBox rect: rects) {
             if (!mightCollide(rect, dt))
                 continue;
-            Vector3d collision = getCollision(rect, dt, firstHit);
-            if (collision.z < secondHit && collision.z >= 0)
-                secondHit = collision.z;
+            Vector3d collision = getCollision(rect, dt, firstHit.z);
+            if (collision.z < secondHit.z && collision.z >= 0)
+                secondHit = collision;
         }
 
-        if (secondHit >= 1) {
-            x += vx * dt * (1 - firstHit);
-            y += vy * dt * (1 - firstHit);
+        if (secondHit.z >= 1) {
+            x += vx * dt * (1 - firstHit.z);
+            y += vy * dt * (1 - firstHit.z);
         } else {
-            x += vx * dt * secondHit;
-            y += vy * dt * secondHit;
+            x += vx * dt * secondHit.z;
+            y += vy * dt * secondHit.z;
             vx = 0;
             vy = 0;
         }
+
+        return firstHit.y == -1 || secondHit.y == -1;
     }
 
-    public void collide(CollisionBox rect, double dt) {
-        collide(rect, dt, 0);
+    /*public boolean collide(CollisionBox rect, double dt) {
+        return collide(rect, dt, 0);
     }
 
-    public void collide(CollisionBox rect, double dt, double timeUsed) {
+    public boolean collide(CollisionBox rect, double dt, double timeUsed) {
         Vector3d collision = getCollision(rect, dt, timeUsed);
 
         // Advance to time of collision
@@ -209,7 +176,7 @@ public class CollisionBox {
         // Advance with new velocity for remaining time
         x += vx * (1 - timeUsed - collision.z) * dt;
         y += vy * (1 - timeUsed - collision.z) * dt;
-    }
+    }*/
 
     public Vector3d getCollision(CollisionBox rect, double dt) {
         return getCollision(rect, dt, 0);

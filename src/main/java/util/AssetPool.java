@@ -6,6 +6,7 @@ import renderer.Shader;
 import renderer.Texture;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,7 +28,7 @@ public class AssetPool {
         }
     }
 
-    public static Texture getTexture(String resourceName) {
+    public static Texture getTexture(String resourceName) throws FileNotFoundException {
         File file = new File(resourceName);
         if (AssetPool.textures.containsKey(file.getAbsolutePath())) {
             return AssetPool.textures.get(file.getAbsolutePath());

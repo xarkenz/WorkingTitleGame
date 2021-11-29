@@ -1,6 +1,6 @@
 package core;
 
-import components.Sprite;
+import component.Sprite;
 import org.joml.Vector2f;
 import renderer.Texture;
 

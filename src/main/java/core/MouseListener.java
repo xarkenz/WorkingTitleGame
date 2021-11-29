@@ -5,6 +5,8 @@ import org.joml.Vector2f;
 import org.joml.Vector4f;
 import util.Settings;
 
+import java.util.Arrays;
+
 import static org.lwjgl.glfw.GLFW.GLFW_PRESS;
 import static org.lwjgl.glfw.GLFW.GLFW_RELEASE;
 
@@ -12,7 +14,8 @@ public class MouseListener {
     private static MouseListener instance;
     private double scrollX, scrollY;
     private double xPos, yPos, lastX, lastY, worldX, worldY, lastWorldX, lastWorldY;
-    private boolean[] mouseButtonPressed = new boolean[3];
+    private final boolean[] buttonStates = new boolean[3];
+    private final boolean[] queuedButtonStates = new boolean[3];
     private int mouseButtonsDown = 0;
     private boolean isDragging;
 
@@ -29,9 +32,8 @@ public class MouseListener {
     }
 
     public static MouseListener get() {
-        if (MouseListener.instance == null) {
+        if (MouseListener.instance == null)
             MouseListener.instance = new MouseListener();
-        }
         return MouseListener.instance;
     }
 
@@ -52,13 +54,14 @@ public class MouseListener {
     public static void mouseButtonCallback(long window, int button, int action, int mods) {
         if (action == GLFW_PRESS) {
             get().mouseButtonsDown++;
-            if (button < get().mouseButtonPressed.length) {
-                get().mouseButtonPressed[button] = true;
+            if (button < get().buttonStates.length) {
+                get().buttonStates[button] = true;
+                get().queuedButtonStates[button] = true;
             }
         } else if (action == GLFW_RELEASE) {
             get().mouseButtonsDown--;
-            if (button < get().mouseButtonPressed.length) {
-                get().mouseButtonPressed[button] = false;
+            if (button < get().buttonStates.length) {
+                get().buttonStates[button] = false;
                 get().isDragging = false;
             }
         }
@@ -79,7 +82,7 @@ public class MouseListener {
     }
 
     public static void calcOrtho() {
-        Camera camera = Window.getScene().getCamera();
+        Camera camera = Window.getWorld().getCamera();
 
         float currentX = getX() - get().gameViewportPos.x;
         float currentY = getY() - get().gameViewportPos.y;
@@ -99,35 +102,35 @@ public class MouseListener {
     }
 
     public static float getX() {
-        return (float)get().xPos;
+        return (float) get().xPos;
     }
 
     public static float getY() {
-        return (float)get().yPos;
+        return (float) get().yPos;
     }
 
     public static float getDx() {
-        return (float)(get().lastX - get().xPos);
+        return (float) (get().lastX - get().xPos);
     }
 
     public static float getDy() {
-        return (float)(get().lastY - get().yPos);
+        return (float) (get().lastY - get().yPos);
     }
 
     public static float getWorldDx() {
-        return (float)(get().lastWorldX - get().worldX);
+        return (float) (get().lastWorldX - get().worldX);
     }
 
     public static float getWorldDy() {
-        return (float)(get().lastWorldY - get().worldY);
+        return (float) (get().lastWorldY - get().worldY);
     }
 
     public static float getScrollX() {
-        return (float)get().scrollX;
+        return (float) get().scrollX;
     }
 
     public static float getScrollY() {
-        return (float)get().scrollY;
+        return (float) get().scrollY;
     }
 
     public static boolean isDragging() {
@@ -135,8 +138,12 @@ public class MouseListener {
     }
 
     public static boolean mouseButtonDown(int button) {
-        if (button < get().mouseButtonPressed.length) {
-            return get().mouseButtonPressed[button];
+        if (button < get().buttonStates.length) {
+            if (get().queuedButtonStates[button]) {
+                get().queuedButtonStates[button] = false;
+                return true;
+            }
+            return get().buttonStates[button];
         } else {
             return false;
         }
@@ -155,11 +162,13 @@ public class MouseListener {
     }
 
     public static float getWorldX() {
-        return (float)get().worldX;
+        MouseListener.calcOrtho();
+        return (float) get().worldX;
     }
 
     public static float getWorldY() {
-        return (float)get().worldY;
+        MouseListener.calcOrtho();
+        return (float) get().worldY;
     }
 
     public static void setGameViewportPos(Vector2f gameViewportPos) {
@@ -168,5 +177,9 @@ public class MouseListener {
 
     public static void setGameViewportSize(Vector2f gameViewportSize) {
         get().gameViewportSize.set(gameViewportSize);
+    }
+
+    public static void clearQueue() {
+        Arrays.fill(get().queuedButtonStates, false);
     }
 }

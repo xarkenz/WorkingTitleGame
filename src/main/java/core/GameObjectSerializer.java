@@ -1,8 +1,8 @@
 package core;
 
 import com.google.gson.*;
-import components.Component;
-import components.Transform;
+import component.Component;
+import component.Transform;
 
 import java.lang.reflect.Type;
 
@@ -12,7 +12,7 @@ public class GameObjectSerializer implements JsonDeserializer<GameObject> {
     public GameObject deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
         JsonObject jsonObject = json.getAsJsonObject();
         String name = jsonObject.get("name").getAsString();
-        JsonArray components = jsonObject.getAsJsonArray("components");
+        JsonArray components = jsonObject.getAsJsonArray("component");
 
         GameObject go = new GameObject(name);
         for (JsonElement e : components) {

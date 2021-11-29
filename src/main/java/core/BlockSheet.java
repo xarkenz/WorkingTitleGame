@@ -1,6 +1,7 @@
 package core;
 
-import blocks.Block;
+import block.BlockQuad;
+import block.BlockType;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -38,12 +39,12 @@ public class BlockSheet {
     };
 
     private Texture texture;
-    private String name;
+    private BlockType type;
     private int blockSize;
     private int format;
 
-    public BlockSheet(Texture texture, String name) {
-        this.name = name;
+    public BlockSheet(Texture texture, BlockType type) {
+        this.type = type;
         this.texture = texture;
 
         this.blockSize = 16;
@@ -56,7 +57,7 @@ public class BlockSheet {
         JsonObject json = null;
 
         try {
-            json = (JsonObject) JsonParser.parseReader(new FileReader("assets/textures/blocks/" + name + ".json"));
+            json = (JsonObject) JsonParser.parseReader(new FileReader("assets/textures/block/" + type.name() + ".json"));
         } catch (FileNotFoundException e0) {
             try {
                 json = (JsonObject) JsonParser.parseReader(new FileReader("assets/templates/default_block.json"));
@@ -65,7 +66,7 @@ public class BlockSheet {
             }
         }
 
-        assert json != null : name + ".json is improperly formatted";
+        assert json != null : type.name() + ".json is improperly formatted.";
 
         boolean validFormat = false;
         for (int i=0; i < FORMATS.length; i++) {
@@ -75,8 +76,8 @@ public class BlockSheet {
                 break;
             }
         }
-        assert validFormat : name + ".json: Invalid 'format' tag";
-        assert this.format < FORMATS.length : name + ".json: Invalid format ID";
+        assert validFormat : type.name() + ".json: Invalid 'format' tag.";
+        assert this.format < FORMATS.length : type.name() + ".json: Invalid format ID.";
 
         List<Integer> texShapes = new ArrayList<>();
 
@@ -125,30 +126,30 @@ public class BlockSheet {
                 float leftX = 0;
                 float bottomY = 0;
                 switch (j) {
-                    case 0:
+                    case 0 -> {
                         topY = (currentY + blockSize) / (float) texture.getHeight();
                         rightX = (currentX + blockSize / 2f) / (float) texture.getWidth();
                         leftX = currentX / (float) texture.getWidth();
                         bottomY = (currentY + blockSize / 2f) / (float) texture.getHeight();
-                        break;
-                    case 1:
+                    }
+                    case 1 -> {
                         topY = (currentY + blockSize) / (float) texture.getHeight();
                         rightX = (currentX + blockSize) / (float) texture.getWidth();
                         leftX = (currentX + blockSize / 2f) / (float) texture.getWidth();
                         bottomY = (currentY + blockSize / 2f) / (float) texture.getHeight();
-                        break;
-                    case 2:
+                    }
+                    case 2 -> {
                         topY = (currentY + blockSize / 2f) / (float) texture.getHeight();
                         rightX = (currentX + blockSize / 2f) / (float) texture.getWidth();
                         leftX = currentX / (float) texture.getWidth();
                         bottomY = currentY / (float) texture.getHeight();
-                        break;
-                    case 3:
+                    }
+                    case 3 -> {
                         topY = (currentY + blockSize / 2f) / (float) texture.getHeight();
                         rightX = (currentX + blockSize) / (float) texture.getWidth();
                         leftX = (currentX + blockSize / 2f) / (float) texture.getWidth();
                         bottomY = currentY / (float) texture.getHeight();
-                        break;
+                    }
                 }
                 Vector2f[] texCoords = {
                         new Vector2f(rightX, topY),
@@ -158,15 +159,15 @@ public class BlockSheet {
                 };
 
                 if (this.format == 0) {
-                    Block.addQuad(new BlockQuad(this.texture, this.name, texCoords, blockSize, j, this.format));
+                    BlockQuad.add(new BlockQuad(this.texture, this.type, texCoords, blockSize, j, this.format));
                 } else if (this.format == 1 || this.format == 2) {
-                    Block.addQuad(new BlockQuad(this.texture, this.name, texCoords, blockSize, j, this.format, texShapes.get(i)));
+                    BlockQuad.add(new BlockQuad(this.texture, this.type, texCoords, blockSize, j, this.format, texShapes.get(i)));
                 }
             }
 
             currentX += blockSize;
 
-            assert currentX < texture.getWidth() : name + ".json: More textures defined than exist in block sheet";
+            assert currentX < texture.getWidth() : type.name() + ".json: More textures defined than exist in block sheet.";
         }
     }
 }

@@ -1,14 +1,12 @@
 package core;
 
-import org.joml.Matrix4f;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
+import org.joml.*;
 
 public class Camera {
     private Matrix4f projectionMatrix, viewMatrix, inverseProjection, inverseView;
     public Vector2f position;
-    private Vector2f projectionSize = new Vector2f(32.0f * 40.f, 32.0f * 21.0f);
-    private float zoom = 1.0f;
+    private Vector2f projectionSize = new Vector2f(32 * 40, 32 * 21);
+    private float zoom = 1;
 
     public Camera(Vector2f position) {
         this.position = position;
@@ -26,31 +24,30 @@ public class Camera {
     }
 
     public Matrix4f getViewMatrix() {
-        Vector3f cameraFront = new Vector3f(0.0f, 0.0f, -1.0f);
-        Vector3f cameraUp = new Vector3f(0.0f, 1.0f, 0.0f);
-        this.viewMatrix.identity();
-        viewMatrix.lookAt(new Vector3f(position.x, position.y, 20.0f),
-                                       cameraFront.add(position.x, position.y, 0.0f),
-                                       cameraUp);
-        this.viewMatrix.invert(inverseView);
+        Vector3f cameraFront = new Vector3f(position.x, position.y, -1);
+        Vector3f cameraUp = new Vector3f(0, 1, 0);
 
-        return this.viewMatrix;
+        viewMatrix.identity();
+        viewMatrix.lookAt(new Vector3f(position.x - projectionSize.x / 2, position.y - projectionSize.y / 2, 20), cameraFront.sub(projectionSize.x / 2, projectionSize.y / 2, 0), cameraUp);
+        viewMatrix.invert(inverseView);
+
+        return viewMatrix;
     }
 
     public Matrix4f getProjectionMatrix() {
-        return this.projectionMatrix;
+        return projectionMatrix;
     }
 
     public Matrix4f getInverseProjection() {
-        return this.inverseProjection;
+        return inverseProjection;
     }
 
     public Matrix4f getInverseView() {
-        return this.inverseView;
+        return inverseView;
     }
 
     public Vector2f getProjectionSize() {
-        return this.projectionSize;
+        return projectionSize;
     }
 
     public float getZoom() {
@@ -62,6 +59,6 @@ public class Camera {
     }
 
     public void addZoom(float value) {
-        this.zoom += value;
+        zoom += value;
     }
 }

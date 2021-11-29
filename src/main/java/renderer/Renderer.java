@@ -1,23 +1,22 @@
 package renderer;
 
-import blocks.Block;
-import components.SpriteRenderer;
-import core.GameObject;
+import block.Chunk;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class Renderer {
-    private final int MAX_BATCH_SIZE = 1000;
-    private List<RenderBatch> batches;
+
+//    private final int MAX_BATCH_SIZE = 1000;
+    private final List<ChunkRenderBatch> batches;
     private static Shader currentShader;
 
     public Renderer() {
-        this.batches = new ArrayList<>();
+        batches = new ArrayList<>();
     }
 
-    public void add(GameObject go) {
+    /*public void add(GameObject go) {
         SpriteRenderer spr = go.getComponent(SpriteRenderer.class);
         if (spr != null) {
             add(spr);
@@ -26,7 +25,7 @@ public class Renderer {
 
     public void add(SpriteRenderer sprite) {
         boolean added = false;
-        for (RenderBatch batch : batches) {
+        for (SpriteRenderBatch batch : batches) {
             if (batch.hasRoom() && batch.getZIndex() == sprite.gameObject.transform.zIndex && batch.isSpriteBatch()) {
                 Texture tex = sprite.getTexture();
                 if (tex == null || (batch.hasTexture(tex) || batch.hasTextureRoom())) {
@@ -38,40 +37,38 @@ public class Renderer {
         }
 
         if (!added) {
-            RenderBatch newBatch = new RenderBatch(MAX_BATCH_SIZE, sprite.gameObject.transform.zIndex, true);
+            SpriteRenderBatch newBatch = new SpriteRenderBatch(MAX_BATCH_SIZE, sprite.gameObject.transform.zIndex, true);
             newBatch.start();
             batches.add(newBatch);
             newBatch.addSprite(sprite);
             Collections.sort(batches);
         }
-    }
+    }*/
 
-    public void add(Block block) {
+    public void add(Chunk chunk) {
         boolean added = false;
-        for (RenderBatch batch : batches) {
-            if (batch.hasRoom() && batch.getZIndex() == 0 && !batch.isSpriteBatch()) {
-                Texture tex = block.getTexture();
-                if (tex == null || (batch.hasTexture(tex) || batch.hasTextureRoom())) {
-                    batch.addBlock(block);
-                    added = true;
-                    break;
-                }
+
+        for (ChunkRenderBatch batch : batches) {
+            if (batch.isEmpty()) {
+                batch.setChunk(chunk);
+                added = true;
+                break;
             }
         }
 
         if (!added) {
-            RenderBatch newBatch = new RenderBatch(MAX_BATCH_SIZE, 0, false);
+            ChunkRenderBatch newBatch = new ChunkRenderBatch(0);
             newBatch.start();
             batches.add(newBatch);
-            newBatch.addBlock(block);
+            newBatch.setChunk(chunk);
             Collections.sort(batches);
         }
     }
 
-    public void remove(Block block) {
-        for (RenderBatch batch : batches) {
-            // Only removes the block if it finds it, so we don't need to check if the batch has the block
-            batch.removeBlock(block);
+    public void remove(Chunk chunk) {
+        for (ChunkRenderBatch batch : batches) {
+            if (batch.getChunk().equals(chunk))
+                batch.setChunk(null);
         }
     }
 
@@ -85,7 +82,7 @@ public class Renderer {
 
     public void render() {
         currentShader.use();
-        for (RenderBatch batch : batches) {
+        for (ChunkRenderBatch batch : batches) {
             batch.render();
         }
     }

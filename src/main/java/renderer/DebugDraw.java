@@ -92,8 +92,8 @@ public class DebugDraw {
 
         // Use shader
         shader.use();
-        shader.uploadMat4f("uProjection", Window.getScene().getCamera().getProjectionMatrix());
-        shader.uploadMat4f("uView", Window.getScene().getCamera().getViewMatrix());
+        shader.uploadMat4f("uProjection", Window.getWorld().getCamera().getProjectionMatrix());
+        shader.uploadMat4f("uView", Window.getWorld().getCamera().getViewMatrix());
 
         // Bind VAO
         glBindVertexArray(vaoID);
