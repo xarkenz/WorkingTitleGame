@@ -16,13 +16,12 @@ import util.Settings;
 import java.io.FileNotFoundException;
 
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
+import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT;
 
 public class Overworld extends World {
 
-    private SpriteSheet sprites;
     private GameObject viewContainer = createGameObject("level_editor");
     private BlockType holdingBlock = null;
-    private float interactionDelay = 0;
 
     private boolean showGrid = true;
 
@@ -33,8 +32,8 @@ public class Overworld extends World {
     @Override
     public void init() {
         loadResources();
-        sprites = AssetPool.getSpritesheet("assets/textures/test/test_tiles.png");
-        holdingBlock = BlockType.aluminum_block;
+
+        holdingBlock = BlockType.stone;
         camera = new Camera(new Vector2f());
 
         generate();
@@ -89,27 +88,19 @@ public class Overworld extends World {
             chunk.update(dt);
         }
 
+        Vector2i worldPos = new Vector2i((int) Math.floor(MouseListener.getWorldX() / Settings.GRID_SIZE), (int) Math.floor(MouseListener.getWorldY() / Settings.GRID_SIZE));
+
         DebugDraw.addRect(new Vector2f(
                 Settings.GRID_SIZE * (int) Math.floor(MouseListener.getWorldX() / Settings.GRID_SIZE) + Settings.GRID_SIZE / 2f,
                 Settings.GRID_SIZE * (int) Math.floor(MouseListener.getWorldY() / Settings.GRID_SIZE) + Settings.GRID_SIZE / 2f
                 ), new Vector2f(32, 32), new Vector3f(0, 0.5f, 0.5f));
 
         if (MouseListener.mouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
-            if (interactionDelay <= 0) {
-                Vector2i worldPos = new Vector2i((int) Math.floor(MouseListener.getWorldX() / Settings.GRID_SIZE), (int) Math.floor(MouseListener.getWorldY() / Settings.GRID_SIZE));
-                if (getBlockType(worldPos.x, worldPos.y) == null) {
-                    if (holdingBlock != null) {
-                        setBlock(worldPos.x, worldPos.y, holdingBlock);
-                    }
-                } else {
-                    setBlock(worldPos.x, worldPos.y, null);
-                }
-                interactionDelay = 0.3f;
-            } else {
-                interactionDelay -= dt;
-            }
-        } else {
-            interactionDelay = 0;
+            if (getBlockType(worldPos.x, worldPos.y) != null)
+                setBlock(worldPos.x, worldPos.y, null);
+        } else if (MouseListener.mouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
+            if (getBlockType(worldPos.x, worldPos.y) == null)
+                setBlock(worldPos.x, worldPos.y, holdingBlock);
         }
     }
 
@@ -120,44 +111,7 @@ public class Overworld extends World {
 
     @Override
     public void imGui() {
-        /*ImGui.begin("Debug Menu");
-        viewContainer.imGui();
-        ImGui.end();
 
-        ImGui.begin("Tile Palette");
-
-        ImVec2 windowPos = new ImVec2();
-        ImGui.getWindowPos(windowPos);
-        ImVec2 windowSize = new ImVec2();
-        ImGui.getWindowSize(windowSize);
-        ImVec2 itemSpacing = new ImVec2();
-        ImGui.getStyle().getItemSpacing(itemSpacing);
-
-        float windowX2 = windowPos.x + windowSize.x;
-        for (int i = 0; i < sprites.size(); i++) {
-            Sprite sprite = sprites.getSprite(i);
-            float spriteWidth = sprite.getWidth() * 2;
-            float spriteHeight = sprite.getHeight() * 2;
-            int id = sprite.getTexID();
-            Vector2f[] texCoords = sprite.getTexCoords();
-
-            ImGui.pushID(i);
-            if (ImGui.imageButton(id, spriteWidth, spriteHeight, texCoords[2].x, texCoords[0].y, texCoords[0].x, texCoords[2].y)) {
-                GameObject object = Prefabs.generateSpriteObject(sprite, 32, 32);
-                levelEditorContainer.getComponent(MouseControls.class).bindObject(object);
-            }
-            ImGui.popID();
-
-            ImVec2 lastButtonPos = new ImVec2();
-            ImGui.getItemRectMax(lastButtonPos);
-            float lastButtonX2 = lastButtonPos.x;
-            float nextButtonX2 = lastButtonX2 + itemSpacing.x + spriteWidth;
-            if (i + 1 < sprites.size() && nextButtonX2 < windowX2) {
-                ImGui.sameLine();
-            }
-        }
-
-        ImGui.end();*/
     }
 
     @Override

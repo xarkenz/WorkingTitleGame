@@ -9,7 +9,7 @@ import java.util.List;
 public class Renderer {
 
 //    private final int MAX_BATCH_SIZE = 1000;
-    private final List<ChunkRenderBatch> batches;
+    private final List<ChunkRenderer> batches;
     private static Shader currentShader;
 
     public Renderer() {
@@ -48,7 +48,7 @@ public class Renderer {
     public void add(Chunk chunk) {
         boolean added = false;
 
-        for (ChunkRenderBatch batch : batches) {
+        for (ChunkRenderer batch : batches) {
             if (batch.isEmpty()) {
                 batch.setChunk(chunk);
                 added = true;
@@ -57,7 +57,7 @@ public class Renderer {
         }
 
         if (!added) {
-            ChunkRenderBatch newBatch = new ChunkRenderBatch(0);
+            ChunkRenderer newBatch = new ChunkRenderer(0);
             newBatch.start();
             batches.add(newBatch);
             newBatch.setChunk(chunk);
@@ -66,7 +66,7 @@ public class Renderer {
     }
 
     public void remove(Chunk chunk) {
-        for (ChunkRenderBatch batch : batches) {
+        for (ChunkRenderer batch : batches) {
             if (batch.getChunk().equals(chunk))
                 batch.setChunk(null);
         }
@@ -82,7 +82,7 @@ public class Renderer {
 
     public void render() {
         currentShader.use();
-        for (ChunkRenderBatch batch : batches) {
+        for (ChunkRenderer batch : batches) {
             batch.render();
         }
     }

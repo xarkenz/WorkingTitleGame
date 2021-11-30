@@ -23,24 +23,21 @@ public class MouseListener {
     private Vector2f gameViewportSize = new Vector2f();
 
     private MouseListener() {
-        this.scrollX = 0.0;
-        this.scrollY = 0.0;
-        this.xPos = 0.0;
-        this.yPos = 0.0;
-        this.lastX = 0.0;
-        this.lastY = 0.0;
+        scrollX = 0;
+        scrollY = 0;
+        xPos = 0;
+        yPos = 0;
+        lastX = 0;
+        lastY = 0;
     }
 
     public static MouseListener get() {
-        if (MouseListener.instance == null)
-            MouseListener.instance = new MouseListener();
+        if (MouseListener.instance == null) MouseListener.instance = new MouseListener();
         return MouseListener.instance;
     }
 
     public static void mousePosCallback(long window, double x, double y) {
-        if (get().mouseButtonsDown > 0) {
-            get().isDragging = true;
-        }
+        if (get().mouseButtonsDown > 0) get().isDragging = true;
 
         get().lastX = get().xPos;
         get().lastY = get().yPos;
@@ -48,6 +45,7 @@ public class MouseListener {
         get().lastWorldY = get().worldY;
         get().xPos = x;
         get().yPos = y;
+
         calcOrtho();
     }
 
@@ -86,8 +84,8 @@ public class MouseListener {
 
         float currentX = getX() - get().gameViewportPos.x;
         float currentY = getY() - get().gameViewportPos.y;
-        currentX = (currentX / get().gameViewportSize.x) * 2.0f - 1.0f;
-        currentY = -((currentY / get().gameViewportSize.y) * 2.0f - 1.0f);
+        currentX = (currentX / get().gameViewportSize.x) * 2 - 1;
+        currentY = -((currentY / get().gameViewportSize.y) * 2 - 1);
 
         Matrix4f viewProjection = new Matrix4f();
         camera.getInverseView().mul(camera.getInverseProjection(), viewProjection);
@@ -144,9 +142,8 @@ public class MouseListener {
                 return true;
             }
             return get().buttonStates[button];
-        } else {
-            return false;
         }
+        return false;
     }
 
     public static float getScreenX() {
@@ -157,7 +154,7 @@ public class MouseListener {
 
     public static float getScreenY() {
         float currentY = getY() - get().gameViewportPos.y;
-        currentY = (float) Settings.DISPLAY_HEIGHT - ((currentY / get().gameViewportSize.y) * (float) Settings.DISPLAY_HEIGHT);
+        currentY = (float) Settings.DISPLAY_HEIGHT - (currentY / get().gameViewportSize.y) * (float) Settings.DISPLAY_HEIGHT;
         return currentY;
     }
 

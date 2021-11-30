@@ -4,8 +4,8 @@ import static org.lwjgl.opengl.GL30.*;
 
 public class Framebuffer {
 
-    private int fboID = 0;
-    private Texture texture = null;
+    private final int fboID;
+    private final Texture texture;
 
     public Framebuffer(int width, int height) {
         // Generate framebuffer
@@ -23,9 +23,7 @@ public class Framebuffer {
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboID);
 
         // Bind framebuffer if complete
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-            assert false : "Error: Incomplete framebuffer";
-        }
+        assert glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE : "Error: Incomplete framebuffer";
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
@@ -44,4 +42,5 @@ public class Framebuffer {
     public int getTextureID() {
         return texture.getID();
     }
+
 }

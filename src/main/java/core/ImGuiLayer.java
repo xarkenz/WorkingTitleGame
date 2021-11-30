@@ -190,7 +190,7 @@ public class ImGuiLayer {
         ImGui.newFrame();
         setupDockSpace();
         currentScene.imGui();
-        ImGui.showDemoWindow();
+//        ImGui.showDemoWindow();
         gameViewPanel.imGui();
         propertiesPanel.update(dt, currentScene);
         propertiesPanel.imGui();
@@ -242,7 +242,7 @@ public class ImGuiLayer {
         ImGui.pushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f);
         ImGui.pushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
 
-        ImGui.begin("Dock space demo", new ImBoolean(true), windowFlags);
+        ImGui.begin("Dock Space", new ImBoolean(true), windowFlags);
         ImGui.popStyleVar(2);
 
         // Dock space

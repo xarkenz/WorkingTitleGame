@@ -12,11 +12,10 @@ public class GameViewPanel {
     private float left, right, top, bottom;
 
     public void imGui() {
-        ImGui.begin("Game Viewport", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+        ImGui.begin("Game View", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
 
         ImVec2 windowSize = getLargestSizeForViewport();
         ImVec2 windowPos = getCenteredPositionForViewport(windowSize);
-
 
         ImGui.setCursorPos(windowPos.x, windowPos.y);
 
@@ -39,8 +38,7 @@ public class GameViewPanel {
     }
 
     public boolean getWantCaptureMouse() {
-        return MouseListener.getX() >= left && MouseListener.getX() <= right
-                && MouseListener.getY() <= bottom && MouseListener.getY() >= top;
+        return MouseListener.getX() >= left && MouseListener.getX() <= right && MouseListener.getY() <= bottom && MouseListener.getY() >= top;
     }
 
     private ImVec2 getLargestSizeForViewport() {
@@ -65,8 +63,8 @@ public class GameViewPanel {
         windowSize.x -= ImGui.getScrollX();
         windowSize.y -= ImGui.getScrollY();
 
-        float viewportX = (windowSize.x / 2.0f) - (aspectSize.x / 2.0f);
-        float viewportY = (windowSize.y / 2.0f) - (aspectSize.y / 2.0f);
+        float viewportX = windowSize.x / 2 - aspectSize.x / 2;
+        float viewportY = windowSize.y / 2 - aspectSize.y / 2;
 
         return new ImVec2(viewportX + ImGui.getCursorPosX(), viewportY + ImGui.getCursorPosY());
     }

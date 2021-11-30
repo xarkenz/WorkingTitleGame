@@ -17,14 +17,14 @@ public class GridLines extends Component {
         Vector2f projectionSize = camera.getProjectionSize();
 
         if (camera.getZoom() <= 4) {
-            int firstX = ((int) ((cameraPos.x - projectionSize.x / 2) / Settings.GRID_SIZE) - 1) * Settings.GRID_SIZE;
-            int firstY = ((int) ((cameraPos.y - projectionSize.y / 2) / Settings.GRID_SIZE) - 1) * Settings.GRID_SIZE;
+            int firstX = ((int) ((cameraPos.x - projectionSize.x / 2) / Settings.GRID_SIZE) - 5) * Settings.GRID_SIZE;
+            int firstY = ((int) ((cameraPos.y - projectionSize.y / 2) / Settings.GRID_SIZE) - 5) * Settings.GRID_SIZE;
 
-            int numXLines = (int) (projectionSize.x * camera.getZoom() / Settings.GRID_SIZE) + 2;
-            int numYLines = (int) (projectionSize.y * camera.getZoom() / Settings.GRID_SIZE) + 2;
+            int numXLines = (int) (projectionSize.x * camera.getZoom() / Settings.GRID_SIZE) + 10;
+            int numYLines = (int) (projectionSize.y * camera.getZoom() / Settings.GRID_SIZE) + 10;
 
-            int width = (int) (projectionSize.x * camera.getZoom()) + Settings.GRID_SIZE * 2;
-            int height = (int) (projectionSize.y * camera.getZoom()) + Settings.GRID_SIZE * 2;
+            int width = (int) (projectionSize.x * camera.getZoom()) + Settings.GRID_SIZE * 10;
+            int height = (int) (projectionSize.y * camera.getZoom()) + Settings.GRID_SIZE * 10;
 
             int maxLines = Math.max(numXLines, numYLines);
             Vector3f color = new Vector3f(0.9f, 0.9f, 0.9f);

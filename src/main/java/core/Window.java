@@ -1,12 +1,15 @@
 package core;
 
-import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.opengl.GL;
+import org.joml.Vector2f;
+import org.joml.Vector4f;
 import renderer.*;
 import world.Overworld;
 import world.World;
 import util.AssetPool;
 import util.Settings;
+
+import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.opengl.GL;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
@@ -21,19 +24,16 @@ public class Window {
     private Framebuffer framebuffer;
     private PickingTexture pickingTexture;
 
-    public float r, g, b, a;
+    public Vector4f clearColor;
 
     private static Window window;
     private static World currentWorld;
 
     private Window() {
-        this.width = 1920;
-        this.height = 1080;
-        this.title = "WorkingTitleGame";
-        r = 1;
-        g = 1;
-        b = 1;
-        a = 1;
+        width = 1920;
+        height = 1080;
+        title = "WorkingTitleGame";
+        clearColor = new Vector4f(1, 1, 1, 1);
     }
 
     public static void changeWorld(int newWorld) {
@@ -49,9 +49,7 @@ public class Window {
     }
 
     public static Window get() {
-        if (Window.window == null) {
-            Window.window = new Window();
-        }
+        if (Window.window == null) Window.window = new Window();
         return Window.window;
     }
 
@@ -73,9 +71,7 @@ public class Window {
         GLFWErrorCallback.createPrint(System.err).set();
 
         // Initialize GLFW
-        if (!glfwInit()) {
-            throw new IllegalStateException("Failed to initialize GLFW.");
-        }
+        if (!glfwInit()) throw new IllegalStateException("Failed to initialize GLFW.");
 
         // Configure GLFW
         glfwDefaultWindowHints();
@@ -84,10 +80,8 @@ public class Window {
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
         // Create the window
-        glfwWindow = glfwCreateWindow(this.width, this.height, this.title, NULL, NULL);
-        if (glfwWindow == NULL) {
-            throw new IllegalStateException("Failed to create the GLFW window.");
-        }
+        glfwWindow = glfwCreateWindow(width, height, title, NULL, NULL);
+        if (glfwWindow == NULL) throw new IllegalStateException("Failed to create the GLFW window.");
 
         glfwSetCursorPosCallback(glfwWindow, MouseListener::mousePosCallback);
         glfwSetMouseButtonCallback(glfwWindow, MouseListener::mouseButtonCallback);
@@ -116,20 +110,20 @@ public class Window {
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-        this.framebuffer = new Framebuffer(Settings.DISPLAY_WIDTH, Settings.DISPLAY_HEIGHT);
-        this.pickingTexture = new PickingTexture(Settings.DISPLAY_WIDTH, Settings.DISPLAY_HEIGHT);
+        framebuffer = new Framebuffer(Settings.DISPLAY_WIDTH, Settings.DISPLAY_HEIGHT);
+        pickingTexture = new PickingTexture(Settings.DISPLAY_WIDTH, Settings.DISPLAY_HEIGHT);
         glViewport(0, 0, Settings.DISPLAY_WIDTH, Settings.DISPLAY_HEIGHT);
 
-        this.imGuiLayer = new ImGuiLayer(glfwWindow, pickingTexture);
-        this.imGuiLayer.initImGui();
+        imGuiLayer = new ImGuiLayer(glfwWindow, pickingTexture);
+        imGuiLayer.initImGui();
 
         Window.changeWorld(0);
     }
 
     public void loop() {
-        float beginTime = (float)glfwGetTime();
+        float beginTime = (float) glfwGetTime();
         float endTime;
-        float dt = -1.0f;
+        float dt = -1;
 
         Shader defaultShader = AssetPool.getShader("assets/shaders/Default.glsl");
         Shader pickingShader = AssetPool.getShader("assets/shaders/PickingTexture.glsl");
@@ -143,7 +137,7 @@ public class Window {
             pickingTexture.enableWriting();
 
             glViewport(0, 0, Settings.DISPLAY_WIDTH, Settings.DISPLAY_HEIGHT);
-            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClearColor(0, 0, 0, 0);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             Renderer.bindShader(pickingShader);
@@ -155,9 +149,9 @@ public class Window {
             // Render pass 2. Render graphics
             DebugDraw.beginFrame();
 
-            this.framebuffer.bind();
+            framebuffer.bind();
 
-            glClearColor(r, g, b, a);
+            glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
             glClear(GL_COLOR_BUFFER_BIT);
 
             if (dt >= 0) {
@@ -168,9 +162,9 @@ public class Window {
                 DebugDraw.draw(false);
             }
 
-            this.framebuffer.unbind();
+            framebuffer.unbind();
 
-            this.imGuiLayer.update(dt, currentWorld);
+            imGuiLayer.update(dt, currentWorld);
             glfwSwapBuffers(glfwWindow);
             MouseListener.endFrame();
 
@@ -207,7 +201,7 @@ public class Window {
     }
 
     public static float getTargetAspectRatio() {
-        return 16.0f / 9.0f;
+        return 16f / 9f;
     }
 
     public static ImGuiLayer getImGuiLayer() {

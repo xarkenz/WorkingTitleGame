@@ -11,6 +11,7 @@ public class Chunk {
 
     private final Vector2i position;
     private final World world;
+    private boolean isDirty;
     private final BlockType[][] blockTypes;
     private final BlockState[][] blockStates;
     private final BlockQuad[][] blockQuads;
@@ -19,6 +20,7 @@ public class Chunk {
     public Chunk(Vector2i position, World world) {
         this.position = position;
         this.world = world;
+        this.isDirty = true;
         this.blockTypes = new BlockType[SIZE][SIZE];
         this.blockStates = new BlockState[SIZE][SIZE];
         this.blockQuads = new BlockQuad[SIZE * 2][SIZE * 2];
@@ -44,24 +46,43 @@ public class Chunk {
         } else {
             Chunk containingChunk = world.getLoadedChunk(chunkOffset.add(position));
             if (containingChunk == null) return null;
-            else return containingChunk.getBlockType(Math.floorMod(x + dx, SIZE), Math.floorMod(y + dy, SIZE));
+            return containingChunk.getBlockType(Math.floorMod(x + dx, SIZE), Math.floorMod(y + dy, SIZE));
+        }
+    }
+
+    private void spreadDirty(int x, int y) {
+        int[] xOffsets = {-1, 0, 1, -1, 1, -1, 0, 1};
+        int[] yOffsets = {1, 1, 1, 0, 0, -1, -1, -1};
+
+        for (int i = 0; i < 8; i++) {
+            Vector2i chunkOffset = new Vector2i();
+            if (x + xOffsets[i] < 0) chunkOffset.x = -1;
+            else if (x + xOffsets[i] >= SIZE) chunkOffset.x = 1;
+            if (y + yOffsets[i] < 0) chunkOffset.y = -1;
+            else if (y + yOffsets[i] >= SIZE) chunkOffset.y = 1;
+
+            if (chunkOffset.equals(0, 0)) {
+                setBlockDirty(x + xOffsets[i], y + yOffsets[i], true);
+            } else {
+                Chunk containingChunk = world.getLoadedChunk(chunkOffset.add(position));
+                if (containingChunk == null) continue;
+                containingChunk.setBlockDirty(Math.floorMod(x + xOffsets[i], SIZE), Math.floorMod(y + yOffsets[i], SIZE), true);
+            }
         }
     }
 
     public void update(float dt) {
         for (int y = 0; y < SIZE; y++) {
             for (int x = 0; x < SIZE; x++) {
-                if (true) {//(blocksDirty[x][y]) {
+                if (blocksDirty[x][y]) {
                     BlockType block = getBlockType(x, y);
 
                     if (block == null) {
-//                        System.out.println(position + " " + x + " " + y + " air");
                         setBlockQuad(x, y, 0, null);
                         setBlockQuad(x, y, 1, null);
                         setBlockQuad(x, y, 2, null);
                         setBlockQuad(x, y, 3, null);
                     } else {
-//                        System.out.println(position + " " + x + " " + y + " " + block);
                         BlockType upLeft = getAdjacentBlockType(x, y, -1, 1);
                         BlockType up = getAdjacentBlockType(x, y, 0, 1);
                         BlockType upRight = getAdjacentBlockType(x, y, 1, 1);
@@ -81,6 +102,9 @@ public class Chunk {
                         setBlockQuad(x, y, 2, BlockQuad.get(getBlockType(x, y), 2, bottomLeftShape));
                         setBlockQuad(x, y, 3, BlockQuad.get(getBlockType(x, y), 3, bottomRightShape));
                     }
+
+                    blocksDirty[x][y] = false;
+                    isDirty = true;
                 }
             }
         }
@@ -88,6 +112,14 @@ public class Chunk {
 
     public Vector2i getPosition() {
         return position;
+    }
+
+    public World getWorld() {
+        return world;
+    }
+
+    public boolean isChunkDirty() {
+        return isDirty;
     }
 
     public BlockType getBlockType(int x, int y) {
@@ -110,19 +142,19 @@ public class Chunk {
         };
     }
 
-    public boolean isDirty() {
-        for (boolean[] inner : blocksDirty) {
-            for (boolean dirty : inner) {
-                if (dirty) return true;
-            }
-        }
-        return false;
+    public boolean isBlockDirty(int x, int y) {
+        return blocksDirty[x][y];
+    }
+
+    public void setChunkDirty(boolean dirty) {
+        isDirty = dirty;
     }
 
     public void setBlock(int x, int y, BlockType type, BlockState state) {
         blockTypes[x][y] = type;
         blockStates[x][y] = state;
         blocksDirty[x][y] = true;
+        spreadDirty(x, y);
     }
 
     public void setBlock(int x, int y, BlockType type) {
@@ -138,10 +170,8 @@ public class Chunk {
         }
     }
 
-    public void setClean() {
-        for (boolean[] inner : blocksDirty) {
-            Arrays.fill(inner, false);
-        }
+    public void setBlockDirty(int x, int y, boolean dirty) {
+        blocksDirty[x][y] = dirty;
     }
 
 }

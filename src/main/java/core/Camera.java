@@ -19,7 +19,7 @@ public class Camera {
 
     public void adjustProjection() {
         projectionMatrix.identity();
-        projectionMatrix.ortho(0.0f, projectionSize.x * zoom, 0.0f, projectionSize.y * zoom, 0.0f, 100.0f);
+        projectionMatrix.ortho(-projectionSize.x * zoom / 2, projectionSize.x * zoom / 2, -projectionSize.y * zoom / 2, projectionSize.y * zoom / 2, 0.0f, 100.0f);
         projectionMatrix.invert(inverseProjection);
     }
 
@@ -28,7 +28,7 @@ public class Camera {
         Vector3f cameraUp = new Vector3f(0, 1, 0);
 
         viewMatrix.identity();
-        viewMatrix.lookAt(new Vector3f(position.x - projectionSize.x / 2, position.y - projectionSize.y / 2, 20), cameraFront.sub(projectionSize.x / 2, projectionSize.y / 2, 0), cameraUp);
+        viewMatrix.lookAt(new Vector3f(position.x, position.y, 20), cameraFront, cameraUp);
         viewMatrix.invert(inverseView);
 
         return viewMatrix;

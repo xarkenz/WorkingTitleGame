@@ -11,7 +11,7 @@ import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
 public class PropertiesPanel {
 
     private GameObject activeGameObject = null;
-    private PickingTexture pickingTexture;
+    private final PickingTexture pickingTexture;
 
     private float debounce = 0.2f;
 
@@ -23,8 +23,8 @@ public class PropertiesPanel {
         debounce -= dt;
 
         if (MouseListener.mouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && debounce < 0) {
-            int x = (int)MouseListener.getScreenX();
-            int y = (int)MouseListener.getScreenY();
+            int x = (int) MouseListener.getScreenX();
+            int y = (int) MouseListener.getScreenY();
             int uid = pickingTexture.readPixel(x, y);
             activeGameObject = currentScene.getGameObject(uid);
             debounce = 0.2f;
@@ -40,6 +40,6 @@ public class PropertiesPanel {
     }
 
     public GameObject getActiveGameObject() {
-        return this.activeGameObject;
+        return activeGameObject;
     }
 }
