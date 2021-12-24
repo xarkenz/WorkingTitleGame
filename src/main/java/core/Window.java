@@ -3,6 +3,7 @@ package core;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 import renderer.*;
+import util.Logger;
 import world.Overworld;
 import world.World;
 import util.AssetPool;
@@ -17,6 +18,9 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Window {
+
+    private static final String GAME_NAME = "WorkingTitleGame";
+
     private int width, height;
     private String title;
     private long glfwWindow;
@@ -32,7 +36,7 @@ public class Window {
     private Window() {
         width = 1920;
         height = 1080;
-        title = "WorkingTitleGame";
+        title = GAME_NAME + " (In-game)";
         clearColor = new Vector4f(1, 1, 1, 1);
     }
 
@@ -40,7 +44,7 @@ public class Window {
         if (newWorld == 0) {
             currentWorld = new Overworld();
         } else {
-            assert false : "Unknown world '" + newWorld + "'";
+            Logger.critical("Invalid world ID:", newWorld);
         }
 
         currentWorld.load();
@@ -68,10 +72,10 @@ public class Window {
 
     public void init() {
         // Setup an error callback
-        GLFWErrorCallback.createPrint(System.err).set();
+        GLFWErrorCallback.createPrint(Logger.getErr()).set();
 
         // Initialize GLFW
-        if (!glfwInit()) throw new IllegalStateException("Failed to initialize GLFW.");
+        if (!glfwInit()) Logger.critical("Failed to initialize GLFW.");
 
         // Configure GLFW
         glfwDefaultWindowHints();
@@ -81,7 +85,7 @@ public class Window {
 
         // Create the window
         glfwWindow = glfwCreateWindow(width, height, title, NULL, NULL);
-        if (glfwWindow == NULL) throw new IllegalStateException("Failed to create the GLFW window.");
+        if (glfwWindow == NULL) Logger.critical("Failed to create the GLFW window.");
 
         glfwSetCursorPosCallback(glfwWindow, MouseListener::mousePosCallback);
         glfwSetMouseButtonCallback(glfwWindow, MouseListener::mouseButtonCallback);
@@ -125,8 +129,8 @@ public class Window {
         float endTime;
         float dt = -1;
 
-        Shader defaultShader = AssetPool.getShader("assets/shaders/Default.glsl");
-        Shader pickingShader = AssetPool.getShader("assets/shaders/PickingTexture.glsl");
+        Shader defaultShader = AssetPool.getShader("assets/shaders/default.glsl");
+        Shader pickingShader = AssetPool.getShader("assets/shaders/picking_texture.glsl");
 
         while (!glfwWindowShouldClose(glfwWindow)) {
             // Poll events

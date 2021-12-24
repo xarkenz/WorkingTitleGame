@@ -2,7 +2,6 @@ package component;
 
 import core.GameObject;
 import core.MouseListener;
-import core.Window;
 import util.Settings;
 
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
@@ -22,8 +21,8 @@ public class MouseControls extends Component {
     @Override
     public void update(float dt) {
         if (holdingObject != null) {
-            holdingObject.transform.position.x = (int)(MouseListener.getWorldX() / Settings.GRID_SIZE) * Settings.GRID_SIZE;
-            holdingObject.transform.position.y = (int)(MouseListener.getWorldY() / Settings.GRID_SIZE) * Settings.GRID_SIZE;
+            holdingObject.transform.position.x = (int)(MouseListener.getWorldX() / Settings.BLOCK_SIZE) * Settings.BLOCK_SIZE;
+            holdingObject.transform.position.y = (int)(MouseListener.getWorldY() / Settings.BLOCK_SIZE) * Settings.BLOCK_SIZE;
 
             if (MouseListener.mouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
                 place();

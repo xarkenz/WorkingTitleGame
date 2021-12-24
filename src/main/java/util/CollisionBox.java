@@ -1,7 +1,6 @@
 package util;
 
 import org.joml.Vector2d;
-import org.joml.Vector2i;
 import org.joml.Vector3d;
 
 import java.util.Comparator;
@@ -11,8 +10,6 @@ public class CollisionBox {
 
     public double x, y, w, h;
     public double vx, vy;
-
-    private final Comparator<CollisionBox> COMPARE_COLLIDE_TIME = (b1, b2) -> (int) (getCollision(b1, 1).z - getCollision(b2, 1).z);
 
     public CollisionBox(double x, double y, double w, double h) {
         this.x = x;
@@ -96,9 +93,8 @@ public class CollisionBox {
         );
     }
 
-    public boolean mightCollide(CollisionBox rect, double dt) {
-        // Utility to speed up collision detection by checking intersection with broad phase rect
-        return rect.isTouching(getBroadPhase(dt));
+    public boolean passesBy(CollisionBox rect, double dt) {
+        return !rect.isTouching(getBroadPhase(dt));
     }
 
     public boolean collide(List<CollisionBox> rects, double dt) {
@@ -109,43 +105,33 @@ public class CollisionBox {
         Vector3d firstHit = new Vector3d(0, 0, 1);
 
         for (CollisionBox rect : rects) {
-            if (!mightCollide(rect, dt))
-                continue;
+            if (passesBy(rect, dt)) continue;
 
             Vector3d collision = getCollision(rect, dt);
 
-            if (collision.z < 0 || collision.z > 1)
-                continue;
-
-            if (collision.z < firstHit.z) {
-                firstHit = collision;
-            }
+            if (collision.z < 0 || collision.z > 1) continue;
+            if (collision.z < firstHit.z) firstHit = collision;
         }
 
-        if (firstHit.z >= 1)
-            return false;
+        if (firstHit.z >= 1) return false;
 
         x += vx * dt * firstHit.z;
         y += vy * dt * firstHit.z;
 
-        if (firstHit.y == 0)
-            vx = 0;
-        else
-            vy = 0;
+        if (firstHit.y == 0) vx = 0;
+        else vy = 0;
 
-        if (collideOnce)
-            return firstHit.y == -1;
+        if (collideOnce) return firstHit.y == -1;
 
         Vector3d secondHit = new Vector3d(0, 0, 1);
         for (CollisionBox rect: rects) {
-            if (!mightCollide(rect, dt))
-                continue;
+            if (passesBy(rect, dt)) continue;
             Vector3d collision = getCollision(rect, dt, firstHit.z);
             if (collision.z < secondHit.z && collision.z >= 0)
                 secondHit = collision;
         }
 
-        if (secondHit.z >= 1) {
+        if (firstHit.z + secondHit.z >= 1) {
             x += vx * dt * (1 - firstHit.z);
             y += vy * dt * (1 - firstHit.z);
         } else {
@@ -230,22 +216,15 @@ public class CollisionBox {
             entryTime = 1 - timeUsed;
         } else {
             if (xEntryTime > yEntryTime) {
-                if (xEntryPos < 0) {
-                    normalX = 1;
-                } else {
-                    normalX = -1;
-                }
+                normalX = xEntryPos < 0 ? 1 : -1;
                 normalY = 0;
             } else {
-                if (yEntryPos < 0) {
-                    normalY = 1;
-                } else {
-                    normalY = -1;
-                }
+                normalY = yEntryPos < 0 ? 1 : -1;
                 normalX = 0;
             }
         }
 
+//        System.out.println(vy + " " + normalX + " " + normalY + " " + entryTime);
         return new Vector3d(normalX, normalY, entryTime);
     }
 

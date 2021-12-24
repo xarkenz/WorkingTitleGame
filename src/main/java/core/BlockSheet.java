@@ -2,11 +2,12 @@ package core;
 
 import block.BlockQuad;
 import block.BlockType;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import util.AssetPool;
+import util.Logger;
+
+import com.google.gson.*;
 import org.joml.Vector2f;
-import renderer.Texture;
+import org.joml.Vector4i;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -38,14 +39,14 @@ public class BlockSheet {
             "fill_inward_corners"
     };
 
-    private Texture texture;
+    private Vector4i texCoords;
     private BlockType type;
     private int blockSize;
     private int format;
 
-    public BlockSheet(Texture texture, BlockType type) {
+    public BlockSheet(Vector4i texCoords, BlockType type) {
         this.type = type;
-        this.texture = texture;
+        this.texCoords = texCoords;
 
         this.blockSize = 16;
         this.format = 0;
@@ -58,44 +59,48 @@ public class BlockSheet {
 
         try {
             json = (JsonObject) JsonParser.parseReader(new FileReader("assets/textures/block/" + type.name() + ".json"));
-        } catch (FileNotFoundException e0) {
+        } catch (FileNotFoundException e) {
             try {
                 json = (JsonObject) JsonParser.parseReader(new FileReader("assets/templates/default_block.json"));
-            } catch (FileNotFoundException e1) {
-                e1.printStackTrace();
+            } catch (FileNotFoundException e2) {
+                Logger.critical("default_block.json: Not found.");
+            } catch (JsonParseException e2) {
+                e2.printStackTrace(Logger.getErr());
+                Logger.critical("default_block.json: Syntax error while parsing.");
             }
+        } catch (JsonParseException e) {
+            Logger.critical(type.name() + ".json: Syntax error while parsing.");
         }
 
-        assert json != null : type.name() + ".json is improperly formatted.";
+        if (json == null) Logger.critical(type.name() + ".json: Invalid format.");
 
         boolean validFormat = false;
-        for (int i=0; i < FORMATS.length; i++) {
+        for (int i = 0; i < FORMATS.length; i++) {
             if (FORMATS[i].equalsIgnoreCase(json.get("format").getAsString())) {
-                this.format = i;
+                format = i;
                 validFormat = true;
                 break;
             }
         }
-        assert validFormat : type.name() + ".json: Invalid 'format' tag.";
-        assert this.format < FORMATS.length : type.name() + ".json: Invalid format ID.";
+        if (!validFormat) Logger.critical(type.name() + ".json: Invalid 'format' tag.");
 
         List<Integer> texShapes = new ArrayList<>();
 
         // More information needed unless format is 'single'
         if (this.format == 0) {
             numBlocks = 1;
-            this.blockSize = this.texture.getWidth(); // May have a different height if animated
+            this.blockSize = texCoords.z; // May have a different height if animated
         } else {
             this.blockSize = json.get("texture_size").getAsInt();
 
             JsonArray textures = json.get("textures").getAsJsonArray();
-            for (int j=0; j < textures.size(); j++) {
+            for (int j = 0; j < textures.size(); j++) {
                 numBlocks++;
                 String tex =  textures.get(j).getAsString();
 
                 if (this.format == 1) {
                     int shape = -1;
-                    for (int i=0; i < FORMAT_1_SHAPES.length; i++) {
+                    for (int i = 0; i < FORMAT_1_SHAPES.length; i++) {
                         if (FORMAT_1_SHAPES[i].equalsIgnoreCase(tex)) {
                             shape = i;
                             break;
@@ -104,7 +109,7 @@ public class BlockSheet {
                     texShapes.add(shape);
                 } else if (this.format == 2) {
                     int shape = -1;
-                    for (int i=0; i < FORMAT_2_SHAPES.length; i++) {
+                    for (int i = 0; i < FORMAT_2_SHAPES.length; i++) {
                         if (FORMAT_2_SHAPES[i].equalsIgnoreCase(tex)) {
                             shape = i;
                             break;
@@ -117,57 +122,61 @@ public class BlockSheet {
 
         // Parse the texture
 
-        int currentX = 0;
-        int currentY = texture.getHeight() - blockSize;
+        float texW = AssetPool.getBlockTexture().getWidth();
+        float texH = AssetPool.getBlockTexture().getHeight();
+        int currentX = texCoords.x;
+        int currentY = texCoords.y + texCoords.w - blockSize;
         for (int i = 0; i < numBlocks; i++) {
             for (int j = 0; j < 4; j++) {
                 float topY = 0;
                 float rightX = 0;
                 float leftX = 0;
                 float bottomY = 0;
+                
                 switch (j) {
                     case 0 -> {
-                        topY = (currentY + blockSize) / (float) texture.getHeight();
-                        rightX = (currentX + blockSize / 2f) / (float) texture.getWidth();
-                        leftX = currentX / (float) texture.getWidth();
-                        bottomY = (currentY + blockSize / 2f) / (float) texture.getHeight();
+                        topY = currentY + blockSize;
+                        rightX = currentX + blockSize / 2f;
+                        leftX = currentX;
+                        bottomY = currentY + blockSize / 2f;
                     }
                     case 1 -> {
-                        topY = (currentY + blockSize) / (float) texture.getHeight();
-                        rightX = (currentX + blockSize) / (float) texture.getWidth();
-                        leftX = (currentX + blockSize / 2f) / (float) texture.getWidth();
-                        bottomY = (currentY + blockSize / 2f) / (float) texture.getHeight();
+                        topY = currentY + blockSize;
+                        rightX = currentX + blockSize;
+                        leftX = currentX + blockSize / 2f;
+                        bottomY = currentY + blockSize / 2f;
                     }
                     case 2 -> {
-                        topY = (currentY + blockSize / 2f) / (float) texture.getHeight();
-                        rightX = (currentX + blockSize / 2f) / (float) texture.getWidth();
-                        leftX = currentX / (float) texture.getWidth();
-                        bottomY = currentY / (float) texture.getHeight();
+                        topY = currentY + blockSize / 2f;
+                        rightX = currentX + blockSize / 2f;
+                        leftX = currentX;
+                        bottomY = currentY;
                     }
                     case 3 -> {
-                        topY = (currentY + blockSize / 2f) / (float) texture.getHeight();
-                        rightX = (currentX + blockSize) / (float) texture.getWidth();
-                        leftX = (currentX + blockSize / 2f) / (float) texture.getWidth();
-                        bottomY = currentY / (float) texture.getHeight();
+                        topY = currentY + blockSize / 2f;
+                        rightX = currentX + blockSize;
+                        leftX = currentX + blockSize / 2f;
+                        bottomY = currentY;
                     }
                 }
-                Vector2f[] texCoords = {
-                        new Vector2f(rightX, topY),
-                        new Vector2f(rightX, bottomY),
-                        new Vector2f(leftX, bottomY),
-                        new Vector2f(leftX, topY)
+                
+                Vector2f[] quadTexCoords = {
+                        new Vector2f(rightX / texW, topY / texH),
+                        new Vector2f(rightX / texW, bottomY / texH),
+                        new Vector2f(leftX / texW, bottomY / texH),
+                        new Vector2f(leftX / texW, topY / texH)
                 };
 
                 if (this.format == 0) {
-                    BlockQuad.add(new BlockQuad(this.texture, this.type, texCoords, blockSize, j, this.format));
+                    BlockQuad.add(new BlockQuad(type, quadTexCoords, blockSize, j, format));
                 } else if (this.format == 1 || this.format == 2) {
-                    BlockQuad.add(new BlockQuad(this.texture, this.type, texCoords, blockSize, j, this.format, texShapes.get(i)));
+                    BlockQuad.add(new BlockQuad(type, quadTexCoords, blockSize, j, format, texShapes.get(i)));
                 }
             }
 
             currentX += blockSize;
-
-            assert currentX < texture.getWidth() : type.name() + ".json: More textures defined than exist in block sheet.";
+            if (currentX > texCoords.x + texCoords.z)
+                Logger.critical(type.name() + ".json: More textures are defined than exist in block sheet.");
         }
     }
 }

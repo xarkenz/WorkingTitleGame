@@ -44,17 +44,13 @@ public abstract class World {
     }
 
     public void start() {
-        /*for (GameObject go : gameObjects) {
-            go.start();
-            renderer.add(go);
-        }*/
         for (Entity entity : entities) {
             entity.start();
-//            renderer.add(entity);
+            renderer.addEntity(entity);
         }
         for (Chunk chunk : chunks.values()) {
             chunk.start();
-            renderer.add(chunk);
+            renderer.addChunk(chunk);
         }
         isRunning = true;
     }
@@ -66,7 +62,7 @@ public abstract class World {
             chunks.put(chunkPos, chunk);
             if (isRunning) {
                 chunk.start();
-                renderer.add(chunk);
+                renderer.addChunk(chunk);
             }
         }
         return chunk;
@@ -78,7 +74,7 @@ public abstract class World {
 
     public void deleteChunk(Vector2i chunkPos) {
         Chunk chunk = chunks.remove(chunkPos);
-        if (chunk != null) renderer.remove(chunk);
+        if (chunk != null) renderer.removeChunk(chunk);
     }
 
     public BlockType getBlockType(int x, int y) {

@@ -11,7 +11,6 @@ public class BlockQuad {
 
     private static final HashMap<BlockType, List<BlockQuad>> QUADS = new HashMap<>();
 
-    private final Texture texture;
     private final BlockType type;
     private final Vector2f[] texCoords;
     private final int format;
@@ -20,9 +19,8 @@ public class BlockQuad {
     private int shape;
     private String attribute, value;
 
-    public BlockQuad(Texture texture, BlockType type, Vector2f[] texCoords, int size, int pos, int format) {
+    public BlockQuad(BlockType type, Vector2f[] texCoords, int size, int pos, int format) {
         // Format 0
-        this.texture = texture;
         this.type = type;
         this.texCoords = texCoords;
         this.size = size;
@@ -30,9 +28,8 @@ public class BlockQuad {
         this.format = format;
     }
 
-    public BlockQuad(Texture texture, BlockType type, Vector2f[] texCoords, int size, int pos, int format, int shape) {
+    public BlockQuad(BlockType type, Vector2f[] texCoords, int size, int pos, int format, int shape) {
         // Formats 1 and 2
-        this.texture = texture;
         this.type = type;
         this.texCoords = texCoords;
         this.size = size;
@@ -41,9 +38,8 @@ public class BlockQuad {
         this.shape = shape;
     }
 
-    public BlockQuad(Texture texture, BlockType type, Vector2f[] texCoords, int size, int pos, int format, String attribute, String value) {
+    public BlockQuad(BlockType type, Vector2f[] texCoords, int size, int pos, int format, String attribute, String value) {
         // Format 3
-        this.texture = texture;
         this.type = type;
         this.texCoords = texCoords;
         this.size = size;
@@ -63,10 +59,6 @@ public class BlockQuad {
 
     public int getShape() {
         return shape;
-    }
-
-    public Texture getTexture() {
-        return texture;
     }
 
     public int getFormat() {

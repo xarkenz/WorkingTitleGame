@@ -2,13 +2,12 @@ package renderer;
 
 import block.BlockQuad;
 import block.Chunk;
-import component.SpriteRenderer;
 import core.Window;
 import org.joml.Vector2f;
+import util.AssetPool;
+import util.Settings;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
@@ -16,30 +15,20 @@ import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 
 public class ChunkRenderer implements Comparable<ChunkRenderer> {
-    // Vertex
-    // ======
-    // Pos               Color                          Texture coords   Texture id
-    // float, float,     float, float, float, float     float, float     float
+
     private final int POS_SIZE = 2;
     private final int COLOR_SIZE = 4;
     private final int TEX_COORDS_SIZE = 2;
-    private final int TEX_ID_SIZE = 1;
-    private final int ENTITY_ID_SIZE = 1;
-    private final int VERTEX_SIZE = POS_SIZE + COLOR_SIZE + TEX_COORDS_SIZE + TEX_ID_SIZE + ENTITY_ID_SIZE;
+
+    private final int VERTEX_SIZE = POS_SIZE + COLOR_SIZE + TEX_COORDS_SIZE;
     private final int VERTEX_SIZE_BYTES = VERTEX_SIZE * Float.BYTES;
 
     private final int POS_OFFSET = 0;
     private final int COLOR_OFFSET = POS_OFFSET + POS_SIZE * Float.BYTES;
     private final int TEX_COORDS_OFFSET = COLOR_OFFSET + COLOR_SIZE * Float.BYTES;
-    private final int TEX_ID_OFFSET = TEX_COORDS_OFFSET + TEX_COORDS_SIZE * Float.BYTES;
-    private final int UID_OFFSET = TEX_ID_OFFSET + TEX_ID_SIZE * Float.BYTES;
 
-    private SpriteRenderer[] sprites;
     private Chunk chunk;
     private final float[] vertices;
-    private final int[] texSlots = {0, 1, 2, 3, 4, 5, 6, 7};
-
-    private final List<Texture> textures;
     private int vaoID, vboID;
     private final int zIndex;
 
@@ -47,12 +36,10 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
         zIndex = z;
         //                   |-- # of squares to draw --|- 4 per square -|
         vertices = new float[Chunk.SIZE * Chunk.SIZE * 4 * 4 * VERTEX_SIZE];
-
-        textures = new ArrayList<>();
     }
 
     public void start() {
-        // Generate and bind a Vertex Array Object
+        // Generate and bind a vertex array
         vaoID = glGenVertexArrays();
         glBindVertexArray(vaoID);
 
@@ -76,12 +63,6 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
 
         glVertexAttribPointer(2, TEX_COORDS_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, TEX_COORDS_OFFSET);
         glEnableVertexAttribArray(2);
-
-        glVertexAttribPointer(3, TEX_ID_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, TEX_ID_OFFSET);
-        glEnableVertexAttribArray(3);
-
-        glVertexAttribPointer(4, ENTITY_ID_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, UID_OFFSET);
-        glEnableVertexAttribArray(4);
     }
 
     public Chunk getChunk() {
@@ -90,62 +71,48 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
 
     public void setChunk(Chunk chunk) {
         this.chunk = chunk;
-
-        // Load properties in vertex array
-        loadChunkVertexProperties();
+        loadVertices();
     }
 
     public void render() {
         if (chunk.isChunkDirty()) {
-            loadChunkVertexProperties();
+            loadVertices();
             chunk.setChunkDirty(false);
 
             glBindBuffer(GL_ARRAY_BUFFER, vboID);
             glBufferSubData(GL_ARRAY_BUFFER, 0, vertices);
         }
 
-        // Use shader
         Shader shader = Renderer.getBoundShader();
         shader.uploadMat4f("uProjection", Window.getWorld().getCamera().getProjectionMatrix());
         shader.uploadMat4f("uView", Window.getWorld().getCamera().getViewMatrix());
-        for (int i = 0; i < textures.size(); i++) {
-            glActiveTexture(GL_TEXTURE0 + i + 1);
-            textures.get(i).bind();
-        }
-        shader.uploadIntArray("uTextures", texSlots);
+
+        Texture tex = AssetPool.getBlockTexture();
+        glActiveTexture(tex.getID());
+        tex.bind();
+
+        shader.uploadTexture("uTexture", GL_TEXTURE0 + AssetPool.getBlockTexture().getID());
 
         glBindVertexArray(vaoID);
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
+        glEnableVertexAttribArray(2);
 
         glDrawElements(GL_TRIANGLES, Chunk.SIZE * Chunk.SIZE * 4 * 6, GL_UNSIGNED_INT, 0);
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
+        glDisableVertexAttribArray(2);
         glBindVertexArray(0);
 
-        for (Texture texture : textures) {
-            texture.unbind();
-        }
-
+        tex.unbind();
         shader.detach();
     }
 
-    private void loadChunkVertexProperties() {
+    private void loadVertices() {
         if (chunk == null) {
             Arrays.fill(vertices, 0);
             return;
-        }
-
-        // Ensure all textures are available
-        for (int y = 0; y < Chunk.SIZE; y++) {
-            for (int x = 0; x < Chunk.SIZE; x++) {
-                for (int p = 0; p < 4; p++) {
-                    BlockQuad quad = chunk.getBlockQuad(x, y, p);
-                    if (quad != null && quad.getTexture() != null && !hasTexture(quad.getTexture()) && hasTextureRoom())
-                        textures.add(quad.getTexture());
-                }
-            }
         }
 
         int offset = 0;
@@ -163,7 +130,6 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
                         continue;
                     }
 
-                    int texId = textures.indexOf(quad.getTexture()) + 1;
                     Vector2f[] texCoords = quad.getTexCoords();
 
                     // Get the offset based on p
@@ -197,8 +163,8 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
                     // Create the vertices for the quad
                     for (int v = 0; v < 4; v++) {
                         // Vertex position
-                        vertices[offset] = chunk.getPosition().x * Chunk.SIZE * 32 + (x + offsets[v].x) * 32;
-                        vertices[offset + 1] = chunk.getPosition().y * Chunk.SIZE * 32 + (y + offsets[v].y) * 32;
+                        vertices[offset] = chunk.getPosition().x * Chunk.SIZE * Settings.BLOCK_SIZE + (x + offsets[v].x) * Settings.BLOCK_SIZE;
+                        vertices[offset + 1] = chunk.getPosition().y * Chunk.SIZE * Settings.BLOCK_SIZE + (y + offsets[v].y) * Settings.BLOCK_SIZE;
 
                         // Vertex color
                         vertices[offset + 2] = 1;
@@ -210,12 +176,6 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
                         vertices[offset + 6] = texCoords[v].x;
                         vertices[offset + 7] = texCoords[v].y;
 
-                        // Texture ID
-                        vertices[offset + 8] = texId;
-
-                        // UID 0 (block)
-                        vertices[offset + 9] = 0;
-
                         offset += VERTEX_SIZE;
                     }
                 }
@@ -224,7 +184,7 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
     }
 
     private int[] generateIndices() {
-        // 6 indices per quad (3 per triangle)
+        // 6 indices per quad (3 indices per triangle, 2 triangles per quad)
         int[] elements = new int[Chunk.SIZE * Chunk.SIZE * 4 * 6];
         for (int i = 0; i < Chunk.SIZE * Chunk.SIZE * 4; i++) {
             loadElementIndices(elements, i);
@@ -250,14 +210,6 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
 
     public boolean isEmpty() {
         return chunk == null;
-    }
-
-    public boolean hasTextureRoom() {
-        return textures.size() < 8;
-    }
-
-    public boolean hasTexture(Texture tex) {
-        return textures.contains(tex);
     }
 
     public int getZIndex() {

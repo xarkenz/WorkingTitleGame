@@ -1,74 +1,66 @@
 package renderer;
 
 import block.Chunk;
+import entity.Entity;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 public class Renderer {
 
-//    private final int MAX_BATCH_SIZE = 1000;
-    private final List<ChunkRenderer> batches;
+    private final ArrayList<ChunkRenderer> chunks;
+    private final ArrayList<EntityRenderBatch> entityBatches;
     private static Shader currentShader;
 
     public Renderer() {
-        batches = new ArrayList<>();
+        chunks = new ArrayList<>();
+        entityBatches = new ArrayList<>();
     }
 
-    /*public void add(GameObject go) {
-        SpriteRenderer spr = go.getComponent(SpriteRenderer.class);
-        if (spr != null) {
-            add(spr);
-        }
-    }
+    public void addEntity(Entity entity) {
+        if (entity.getAppearance().numElements() == 0) return;
 
-    public void add(SpriteRenderer sprite) {
         boolean added = false;
-        for (SpriteRenderBatch batch : batches) {
-            if (batch.hasRoom() && batch.getZIndex() == sprite.gameObject.transform.zIndex && batch.isSpriteBatch()) {
-                Texture tex = sprite.getTexture();
-                if (tex == null || (batch.hasTexture(tex) || batch.hasTextureRoom())) {
-                    batch.addSprite(sprite);
-                    added = true;
-                    break;
-                }
+        for (EntityRenderBatch batch : entityBatches) {
+            if (batch.getZIndex() == 0) {
+                added = batch.add(entity);
+                break;
             }
         }
 
         if (!added) {
-            SpriteRenderBatch newBatch = new SpriteRenderBatch(MAX_BATCH_SIZE, sprite.gameObject.transform.zIndex, true);
+            EntityRenderBatch newBatch = new EntityRenderBatch(0);
             newBatch.start();
-            batches.add(newBatch);
-            newBatch.addSprite(sprite);
-            Collections.sort(batches);
+            entityBatches.add(newBatch);
+            newBatch.add(entity);
+            Collections.sort(entityBatches);
         }
-    }*/
+    }
 
-    public void add(Chunk chunk) {
+    public void addChunk(Chunk toAdd) {
         boolean added = false;
 
-        for (ChunkRenderer batch : batches) {
-            if (batch.isEmpty()) {
-                batch.setChunk(chunk);
+        for (ChunkRenderer chunk : chunks) {
+            if (chunk.isEmpty()) {
+                chunk.setChunk(toAdd);
                 added = true;
                 break;
             }
         }
 
         if (!added) {
-            ChunkRenderer newBatch = new ChunkRenderer(0);
-            newBatch.start();
-            batches.add(newBatch);
-            newBatch.setChunk(chunk);
-            Collections.sort(batches);
+            ChunkRenderer chunk = new ChunkRenderer(0);
+            chunk.start();
+            chunks.add(chunk);
+            chunk.setChunk(toAdd);
+            Collections.sort(chunks);
         }
     }
 
-    public void remove(Chunk chunk) {
-        for (ChunkRenderer batch : batches) {
-            if (batch.getChunk().equals(chunk))
-                batch.setChunk(null);
+    public void removeChunk(Chunk toRemove) {
+        for (ChunkRenderer chunk : chunks) {
+            if (chunk.getChunk().equals(toRemove))
+                chunk.setChunk(null);
         }
     }
 
@@ -82,7 +74,10 @@ public class Renderer {
 
     public void render() {
         currentShader.use();
-        for (ChunkRenderer batch : batches) {
+        for (ChunkRenderer chunk : chunks) {
+            chunk.render();
+        }
+        for (EntityRenderBatch batch : entityBatches) {
             batch.render();
         }
     }

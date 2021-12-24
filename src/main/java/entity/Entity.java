@@ -6,37 +6,44 @@ import org.joml.Vector2d;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import renderer.DebugDraw;
+import renderer.EntityAppearance;
 import util.CollisionBox;
+import util.Settings;
 
 import java.util.LinkedList;
 
 public abstract class Entity {
 
-    private static int UID_COUNTER = 0;
+    private static int NEXT_UID = 1;
 
-    private final String name;
-    private final int uid;
-    private transient boolean isDirty = true;
+    protected String name;
+    protected final int uid;
+    protected boolean isDirty = true;
 
     protected float health;
     protected boolean isGrounded = false;
+    protected double facing;
 
     protected CollisionBox collisionBox;
+    protected double eyeOffset = 0;
+    protected EntityAppearance appearance;
 
-    protected float accelGravity = 1024f;
-    protected float accelResistance = 32f;
-    protected float accelFriction = 512f;
-    protected float terminalVelocity = 4096f;
+    protected float accelGravity = 512;
+    protected float accelResistance = 16;
+    protected float accelFriction = 256;
+    protected float terminalVelocity = 2048;
 
     protected boolean usesGravity = true;
     protected boolean usesFriction = true;
     protected boolean usesCollision = true;
 
-    public Entity(String name, Vector2d position, Vector2d size, Vector2d velocity, float health) {
+    public Entity(String name, Vector2d position, Vector2d size, Vector2d velocity, double facing, float health) {
         this.name = name;
         this.collisionBox = new CollisionBox(position.x, position.y, size.x, size.y, velocity.x, velocity.y);
+        this.facing = facing;
         this.health = health;
-        this.uid = UID_COUNTER++;
+        this.uid = NEXT_UID++;
+        this.appearance = null;
     }
 
     public void start() {
@@ -44,24 +51,23 @@ public abstract class Entity {
     }
 
     public void update(float dt) {
-
         if (usesGravity) {
-            if (collisionBox.vy - accelGravity * dt < -terminalVelocity) {
+            if (collisionBox.vy - accelGravity * dt < -terminalVelocity)
                 collisionBox.vy = -terminalVelocity;
-            } else {
+            else
                 collisionBox.vy -= accelGravity * dt;
-            }
         }
 
         if (usesFriction) {
             if (collisionBox.vx != 0) {
-                int xDirection = (int) (collisionBox.vx / Math.abs(collisionBox.vx));
+                int xDirection = (int) Math.signum(collisionBox.vx);
                 collisionBox.vx -= xDirection * accelFriction * dt;
-                if (xDirection != (int) (collisionBox.vx / Math.abs(collisionBox.vx))) {
+                if (xDirection != (int) Math.signum(collisionBox.vx))
                     collisionBox.vx = 0;
-                }
             }
         }
+
+        isDirty = collisionBox.vx != 0 || collisionBox.vy != 0;
 
         if (usesCollision) {
             moveWithCollision(dt);
@@ -70,16 +76,17 @@ public abstract class Entity {
             collisionBox.y += collisionBox.vy * dt;
         }
 
-        DebugDraw.addRect(new Vector2f().set(collisionBox.getCenter()), new Vector2f().set(collisionBox.getSize()), new Vector3f(1, 0, 0), 0, 1);
-//        DebugDraw.addRect(new Vector2f().set(collisionBox.getPosition()), new Vector2f(4, 4), new Vector3f(0, 0, 1), 45, 1);
+        DebugDraw.addRect(new Vector2f().set(collisionBox.getCenter()), new Vector2f().set(collisionBox.getSize()), new Vector3f(0.909804f, 0.294118f, 0.200000f), 0, 1);
+        Vector2f eyePos = new Vector2f().set(collisionBox.getCenter().x, getEyeLevel());
+        DebugDraw.addLine(eyePos, new Vector2f(eyePos.x + (float) Math.cos(facing * 2 * Math.PI) * Settings.BLOCK_SIZE,
+                eyePos.y + (float) Math.sin(facing * 2 * Math.PI) * Settings.BLOCK_SIZE), new Vector3f(0.717647f, 0.384314f, 0.941176f));
     }
 
     public boolean isColliding() {
-        for (int posY = (int) Math.floor(collisionBox.y / 32); posY <= (int) Math.floor((collisionBox.y + collisionBox.h) / 32); posY++) {
-            for (int posX = (int) Math.floor(collisionBox.x / 32); posX <= (int) Math.floor((collisionBox.x + collisionBox.w) / 32); posX++) {
+        for (int posY = (int) Math.floor(collisionBox.y / Settings.BLOCK_SIZE); posY <= (int) Math.floor((collisionBox.y + collisionBox.h) / Settings.BLOCK_SIZE); posY++) {
+            for (int posX = (int) Math.floor(collisionBox.x / Settings.BLOCK_SIZE); posX <= (int) Math.floor((collisionBox.x + collisionBox.w) / Settings.BLOCK_SIZE); posX++) {
                 BlockType block = Window.getWorld().getBlockType(posX, posY);
-                if (block != null)
-                    return true;
+                if (block != null) return true;
             }
         }
         return false;
@@ -88,14 +95,13 @@ public abstract class Entity {
     public void moveWithCollision(float dt) {
         CollisionBox area = collisionBox.getBroadPhase(dt);
 //        DebugDraw.addRect(new Vector2f().set(area.getCenter()), new Vector2f().set(area.getSize()), new Vector3f(0, 0.5f, 0), 0, 1);
-        CollisionBox blockArea;
         LinkedList<CollisionBox> colliders = new LinkedList<>();
 
-        for (int posY = (int) Math.floor(area.y / 32); posY <= (int) Math.floor((area.y + area.h) / 32); posY++) {
-            for (int posX = (int) Math.floor(area.x / 32); posX <= (int) Math.floor((area.x + area.w) / 32); posX++) {
-                BlockType block = Window.getWorld().getBlockType(posX, posY);
+        for (int blockY = (int) Math.floor(area.y / Settings.BLOCK_SIZE); blockY <= (int) Math.floor((area.y + area.h) / Settings.BLOCK_SIZE); blockY++) {
+            for (int blockX = (int) Math.floor(area.x / Settings.BLOCK_SIZE); blockX <= (int) Math.floor((area.x + area.w) / Settings.BLOCK_SIZE); blockX++) {
+                BlockType block = Window.getWorld().getBlockType(blockX, blockY);
                 if (block != null) {
-                    blockArea = new CollisionBox(posX * 32, posY * 32, 32, 32);
+                    CollisionBox blockArea = new CollisionBox(blockX * Settings.BLOCK_SIZE, blockY * Settings.BLOCK_SIZE, Settings.BLOCK_SIZE, Settings.BLOCK_SIZE);
                     colliders.add(blockArea);
 //                    DebugDraw.addRect(new Vector2f().set(blockArea.getCenter()), new Vector2f().set(blockArea.getSize()), new Vector3f(0, 0.5f, 0), 0, 1);
                 }
@@ -154,4 +160,13 @@ public abstract class Entity {
     public Vector2d getCenter() {
         return collisionBox.getCenter();
     }
+
+    public double getEyeLevel() {
+        return collisionBox.y + eyeOffset;
+    }
+
+    public EntityAppearance getAppearance() {
+        return appearance;
+    }
+
 }

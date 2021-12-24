@@ -16,12 +16,12 @@ import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 
 public class DebugDraw {
-    private static int MAX_LINES = 5000;
+    private static final int MAX_LINES = 5000;
 
-    private static List<Line> lines = new ArrayList<>();
+    private static final List<Line> lines = new ArrayList<>();
     // 6 floats per vertex, 2 vertices per line
-    private static float[] vertexArray = new float[MAX_LINES * 6 * 2];
-    private static Shader shader = AssetPool.getShader("assets/shaders/DebugGeometry.glsl");
+    private static final float[] vertexArray = new float[MAX_LINES * 6 * 2];
+    private static final Shader shader = AssetPool.getShader("assets/shaders/debug.glsl");
 
     private static int vaoID;
     private static int vboID;
@@ -45,7 +45,7 @@ public class DebugDraw {
         glVertexAttribPointer(1, 3, GL_FLOAT, false, 6 * Float.BYTES, 3 * Float.BYTES);
         glEnableVertexAttribArray(1);
 
-        glLineWidth(2.0f);
+        glLineWidth(2);
     }
 
     public static void beginFrame() {
@@ -76,7 +76,7 @@ public class DebugDraw {
                     // Load position
                     vertexArray[index] = position.x;
                     vertexArray[index + 1] = position.y;
-                    vertexArray[index + 2] = -10.0f;
+                    vertexArray[index + 2] = -10;
 
                     // Load color
                     vertexArray[index + 3] = color.x;
@@ -141,7 +141,7 @@ public class DebugDraw {
                 new Vector2f(max.x, max.y), new Vector2f(max.x, min.y)
         };
 
-        if (rotation != 0.0f) {
+        if (rotation != 0) {
             for (Vector2f vertex : vertices) {
                 MathUtil.rotate(vertex, rotation, center);
             }
@@ -158,17 +158,17 @@ public class DebugDraw {
     }
 
     public static void addRect(Vector2f center, Vector2f dimensions, Vector3f color) {
-        addRect(center, dimensions, color, 0.0f, 1);
+        addRect(center, dimensions, color, 0, 1);
     }
 
     public static void addRect(Vector2f center, Vector2f dimensions) {
-        addRect(center, dimensions, new Vector3f(0, 0, 1), 0.0f, 1);
+        addRect(center, dimensions, new Vector3f(0, 0, 1), 0, 1);
     }
 
     public static void addCircle(Vector2f center, float radius, Vector3f color, int lifetime, int sides) {
         Vector2f[] points = new Vector2f[sides];
-        float increment = 360.0f / (float)points.length;
-        float currentAngle = 0.0f;
+        float increment = 360f / points.length;
+        float currentAngle = 0;
 
         for (int i=0; i < points.length; i++) {
             Vector2f tmp = new Vector2f(radius, 0);

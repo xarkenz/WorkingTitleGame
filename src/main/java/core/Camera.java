@@ -6,7 +6,7 @@ public class Camera {
     private Matrix4f projectionMatrix, viewMatrix, inverseProjection, inverseView;
     public Vector2f position;
     private Vector2f projectionSize = new Vector2f(32 * 40, 32 * 21);
-    private float zoom = 1;
+    private float zoom = 0.4f;
 
     public Camera(Vector2f position) {
         this.position = position;
@@ -54,8 +54,8 @@ public class Camera {
         return zoom;
     }
 
-    public void setZoom(float zoom) {
-        this.zoom = zoom;
+    public void setZoom(float value) {
+        zoom = value;
     }
 
     public void addZoom(float value) {

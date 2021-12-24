@@ -2,6 +2,7 @@ package renderer;
 
 import org.joml.*;
 import org.lwjgl.BufferUtils;
+import util.Logger;
 
 import java.io.IOException;
 import java.nio.FloatBuffer;
@@ -19,41 +20,36 @@ public class Shader {
 
     private String vertexSource;
     private String fragmentSource;
-    private String filePath;
+    private final String filePath;
 
-    public Shader(String filePath) {
+    public Shader(String filePath) throws IOException {
         this.filePath = filePath;
-        try {
-            String source = new String(Files.readAllBytes(Paths.get(filePath)));
-            String[] splitString = source.split("(#type)( )+([a-zA-Z]+)");
+        String source = new String(Files.readAllBytes(Paths.get(filePath)));
+        String[] splitString = source.split("(#type)( )+([a-zA-Z]+)");
 
-            // Find the first #type tag value
-            int index = source.indexOf("#type") + 6;
-            int eol = source.indexOf("\n", index);
-            String firstPattern = source.substring(index, eol).trim();
+        // Find the first #type tag value
+        int index = source.indexOf("#type") + 6;
+        int eol = source.indexOf("\n", index);
+        String firstPattern = source.substring(index, eol).trim();
 
-            // Find the second #type tag value
-            index = source.indexOf("#type", eol) + 6;
-            eol = source.indexOf("\n", index);
-            String secondPattern = source.substring(index, eol).trim();
+        // Find the second #type tag value
+        index = source.indexOf("#type", eol) + 6;
+        eol = source.indexOf("\n", index);
+        String secondPattern = source.substring(index, eol).trim();
 
-            if (firstPattern.equals("vertex")) {
-                vertexSource = splitString[1];
-            } else if (firstPattern.equals("fragment")) {
-                fragmentSource = splitString[1];
-            } else {
-                throw new IOException("Unknown type token '" + firstPattern + "'");
-            }
-            if (secondPattern.equals("vertex")) {
-                vertexSource = splitString[2];
-            } else if (secondPattern.equals("fragment")) {
-                fragmentSource = splitString[2];
-            } else {
-                throw new IOException("Unknown type token '" + secondPattern + "'");
-            }
-        } catch(IOException e) {
-            e.printStackTrace();
-            assert false : "Error: Could not open file for shader: '" + filePath + "'";
+        if (firstPattern.equals("vertex")) {
+            vertexSource = splitString[1];
+        } else if (firstPattern.equals("fragment")) {
+            fragmentSource = splitString[1];
+        } else {
+            throw new IOException("Unknown type token '" + firstPattern + "'");
+        }
+        if (secondPattern.equals("vertex")) {
+            vertexSource = splitString[2];
+        } else if (secondPattern.equals("fragment")) {
+            fragmentSource = splitString[2];
+        } else {
+            throw new IOException("Unknown type token '" + secondPattern + "'");
         }
     }
 
@@ -68,12 +64,8 @@ public class Shader {
         glShaderSource(vertexID, vertexSource);
         glCompileShader(vertexID);
         // Check for compilation errors
-        int success = glGetShaderi(vertexID, GL_COMPILE_STATUS);
-        if (success == GL_FALSE) {
-            int len = glGetShaderi(vertexID, GL_INFO_LOG_LENGTH);
-            System.out.println("ERROR: '" + filePath + "'\n\tVertex shader compilation failed.");
-            System.out.println(glGetShaderInfoLog(vertexID, len));
-            assert false : "";
+        if (glGetShaderi(vertexID, GL_COMPILE_STATUS) == GL_FALSE) {
+            Logger.critical(filePath + ": Vertex shader compilation failed:\n" + glGetShaderInfoLog(vertexID, glGetShaderi(vertexID, GL_INFO_LOG_LENGTH)));
         }
 
         // Load and compile the fragment shader
@@ -82,12 +74,8 @@ public class Shader {
         glShaderSource(fragmentID, fragmentSource);
         glCompileShader(fragmentID);
         // Check for compilation errors
-        success = glGetShaderi(fragmentID, GL_COMPILE_STATUS);
-        if (success == GL_FALSE) {
-            int len = glGetShaderi(fragmentID, GL_INFO_LOG_LENGTH);
-            System.out.println("ERROR: '" + filePath + "'\n\tFragment shader compilation failed.");
-            System.out.println(glGetShaderInfoLog(fragmentID, len));
-            assert false : "";
+        if (glGetShaderi(fragmentID, GL_COMPILE_STATUS) == GL_FALSE) {
+            Logger.critical(filePath + ": Fragment shader compilation failed:\n" + glGetShaderInfoLog(fragmentID, glGetShaderi(fragmentID, GL_INFO_LOG_LENGTH)));
         }
 
         // Link shaders
@@ -97,12 +85,8 @@ public class Shader {
         glLinkProgram(shaderProgramID);
 
         // Check for linking errors
-        success = glGetProgrami(shaderProgramID, GL_LINK_STATUS);
-        if (success == GL_FALSE) {
-            int len = glGetProgrami(shaderProgramID, GL_INFO_LOG_LENGTH);
-            System.out.println("ERROR: '" + filePath + "'\n\tShader linking failed.");
-            System.out.println(glGetProgramInfoLog(shaderProgramID, len));
-            assert false : "";
+        if (glGetProgrami(shaderProgramID, GL_LINK_STATUS) == GL_FALSE) {
+            Logger.critical(filePath + ": Shader linking failed:\n" + glGetProgramInfoLog(shaderProgramID, glGetProgrami(shaderProgramID, GL_INFO_LOG_LENGTH)));
         }
     }
 

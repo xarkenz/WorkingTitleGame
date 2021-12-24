@@ -1,5 +1,7 @@
 package renderer;
 
+import util.Logger;
+
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
 import static org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT32;
 import static org.lwjgl.opengl.GL30.*;
@@ -11,9 +13,8 @@ public class PickingTexture {
     private int depthTexture;
 
     public PickingTexture(int width, int height) {
-        if (!init(width, height)) {
-            assert false : "Error while initializing picking texture";
-        }
+        if (!init(width, height))
+            Logger.critical("Error while initializing picking texture.");
     }
 
     public boolean init(int width, int height) {
@@ -29,7 +30,7 @@ public class PickingTexture {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, 0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this.pickingTextureID, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pickingTextureID, 0);
 
         // Create texture object for depth buffer
         glEnable(GL_TEXTURE_2D);
@@ -66,10 +67,10 @@ public class PickingTexture {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
         glReadBuffer(GL_COLOR_ATTACHMENT0);
 
-        float pixels[] = new float[3];
+        float[] pixels = new float[3];
         glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT, pixels);
 
         // Remove +1 added in RenderBatch (invalid object returns -1)
-        return (int)pixels[0] - 1;
+        return (int) pixels[0] - 1;
     }
 }
