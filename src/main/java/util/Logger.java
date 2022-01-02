@@ -8,7 +8,6 @@ public class Logger {
 
     private static PrintStream out = System.out;
     private static PrintStream err = System.err;
-    public static boolean debug = false;
 
     public static PrintStream getOut() {
         return out;
@@ -45,7 +44,7 @@ public class Logger {
     }
 
     public static void debug(Object... text) {
-        out.println("[" + glfwGetTime() + "] DEBUG: " + join(text));
+        if (Settings.ENABLE_DEBUG) out.println("[" + glfwGetTime() + "] DEBUG: " + join(text));
     }
 
     public static void warning(Object... text) {

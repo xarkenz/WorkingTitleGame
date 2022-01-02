@@ -9,6 +9,7 @@ import util.Settings;
 
 import java.util.Arrays;
 
+import static org.lwjgl.glfw.GLFW.glfwGetTime;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
@@ -115,9 +116,30 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
             return;
         }
 
+        double time = glfwGetTime();
+
         int offset = 0;
         for (int y = 0; y < Chunk.SIZE; y++) {
             for (int x = 0; x < Chunk.SIZE; x++) {
+                float[] blockLights = {
+                        (chunk.getVisualLight(x - 1, y + 1) + 3) / 18f,
+                        (chunk.getVisualLight(x, y + 1) + 3) / 18f,
+                        (chunk.getVisualLight(x + 1, y + 1) + 3) / 18f,
+                        (chunk.getVisualLight(x - 1, y) + 3) / 18f,
+                        (chunk.getVisualLight(x, y) + 3) / 18f,
+                        (chunk.getVisualLight(x + 1, y) + 3) / 18f,
+                        (chunk.getVisualLight(x - 1, y - 1) + 3) / 18f,
+                        (chunk.getVisualLight(x, y - 1) + 3) / 18f,
+                        (chunk.getVisualLight(x + 1, y - 1) + 3) / 18f,
+                };
+                float[] cornerLights = {
+                        (blockLights[0] + blockLights[1] + blockLights[3] + blockLights[4]) / 4,
+                        (blockLights[1] + blockLights[2] + blockLights[4] + blockLights[5]) / 4,
+                        (blockLights[3] + blockLights[4] + blockLights[6] + blockLights[7]) / 4,
+                        (blockLights[4] + blockLights[5] + blockLights[7] + blockLights[8]) / 4,
+                };
+
+                float[] vertexLights = new float[4];
                 Vector2f[] offsets = {new Vector2f(), new Vector2f(), new Vector2f(), new Vector2f()};
 
                 for (int p = 0; p < 4; p++) {
@@ -130,33 +152,49 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
                         continue;
                     }
 
-                    Vector2f[] texCoords = quad.getTexCoords();
+                    Vector2f[] texCoords = quad.getTexCoords(time);
 
-                    // Get the offset based on p
+                    // Get the offsets and vertex lights based on p
                     switch (p) {
                         case 0 -> {
-                            offsets[0].set(0.5f, 1);
-                            offsets[1].set(0.5f, 0.5f);
-                            offsets[2].set(0,    0.5f);
-                            offsets[3].set(0,    1);
+                            offsets[0].set(0.5001f, 1.0001f);
+                            offsets[1].set(0.5001f, 0.4999f);
+                            offsets[2].set(-0.0001f, 0.4999f);
+                            offsets[3].set(-0.0001f, 1.0001f);
+                            vertexLights[0] = (cornerLights[0] + cornerLights[1]) / 2;
+                            vertexLights[1] = blockLights[4];
+                            vertexLights[2] = (cornerLights[0] + cornerLights[2]) / 2;
+                            vertexLights[3] = cornerLights[0];
                         }
                         case 1 -> {
-                            offsets[0].set(1,    1);
-                            offsets[1].set(1,    0.5f);
-                            offsets[2].set(0.5f, 0.5f);
-                            offsets[3].set(0.5f, 1);
+                            offsets[0].set(1.0001f, 1.0001f);
+                            offsets[1].set(1.0001f, 0.4999f);
+                            offsets[2].set(0.4999f, 0.4999f);
+                            offsets[3].set(0.4999f, 1.0001f);
+                            vertexLights[0] = cornerLights[1];
+                            vertexLights[1] = (cornerLights[1] + cornerLights[3]) / 2;
+                            vertexLights[2] = blockLights[4];
+                            vertexLights[3] = (cornerLights[1] + cornerLights[0]) / 2;
                         }
                         case 2 -> {
-                            offsets[0].set(0.5f, 0.5f);
-                            offsets[1].set(0.5f, 0);
-                            offsets[2].set(0,    0);
-                            offsets[3].set(0,    0.5f);
+                            offsets[0].set(0.5001f, 0.5001f);
+                            offsets[1].set(0.5001f, -0.0001f);
+                            offsets[2].set(-0.0001f, -0.0001f);
+                            offsets[3].set(-0.0001f, 0.5001f);
+                            vertexLights[0] = blockLights[4];
+                            vertexLights[1] = (cornerLights[2] + cornerLights[3]) / 2;
+                            vertexLights[2] = cornerLights[2];
+                            vertexLights[3] = (cornerLights[2] + cornerLights[0]) / 2;
                         }
                         case 3 -> {
-                            offsets[0].set(1,    0.5f);
-                            offsets[1].set(1,    0);
-                            offsets[2].set(0.5f, 0);
-                            offsets[3].set(0.5f, 0.5f);
+                            offsets[0].set(1.0001f, 0.5001f);
+                            offsets[1].set(1.0001f, -0.0001f);
+                            offsets[2].set(0.4999f, -0.0001f);
+                            offsets[3].set(0.4999f, 0.5001f);
+                            vertexLights[3] = (cornerLights[3] + cornerLights[1]) / 2;
+                            vertexLights[0] = cornerLights[3];
+                            vertexLights[1] = (cornerLights[3] + cornerLights[2]) / 2;
+                            vertexLights[2] = blockLights[4];
                         }
                     }
 
@@ -167,9 +205,9 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
                         vertices[offset + 1] = chunk.getPosition().y * Chunk.SIZE * Settings.BLOCK_SIZE + (y + offsets[v].y) * Settings.BLOCK_SIZE;
 
                         // Vertex color
-                        vertices[offset + 2] = 1;
-                        vertices[offset + 3] = 1;
-                        vertices[offset + 4] = 1;
+                        vertices[offset + 2] = vertexLights[v];
+                        vertices[offset + 3] = vertexLights[v];
+                        vertices[offset + 4] = vertexLights[v];
                         vertices[offset + 5] = 1;
 
                         // Texture coordinates

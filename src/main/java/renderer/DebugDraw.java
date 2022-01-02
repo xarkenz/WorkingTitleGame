@@ -5,6 +5,7 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 import util.AssetPool;
 import util.MathUtil;
+import util.Settings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,33 +39,35 @@ public class DebugDraw {
         glBindBuffer(GL_ARRAY_BUFFER, vboID);
         glBufferData(GL_ARRAY_BUFFER, (long) vertexArray.length * Float.BYTES, GL_DYNAMIC_DRAW);
 
-        // Enable vertex array attributes
+        // Vertex position
         glVertexAttribPointer(0, 3, GL_FLOAT, false, 6 * Float.BYTES, 0);
         glEnableVertexAttribArray(0);
 
+        // Vertex color
         glVertexAttribPointer(1, 3, GL_FLOAT, false, 6 * Float.BYTES, 3 * Float.BYTES);
         glEnableVertexAttribArray(1);
 
-        glLineWidth(2);
+        glLineWidth(Settings.DEBUG_LINE_SIZE);
     }
 
     public static void beginFrame() {
+        // Start renderer if not already started
         if (!started) {
             start();
             started = true;
         }
 
-        // Remove dead lines
-        for (int i=0; i < lines.size(); i++) {
-            if (lines.get(i).beginFrame() <= 0) {
-                lines.remove(i);
-                i--;
-            }
+        // Remove expired lines
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines.get(i).beginFrame() <= 0) lines.remove(i--);
         }
     }
 
     public static void draw(boolean isBackground) {
-        if (lines.size() <= 0) return;
+        if (lines.isEmpty()) return;
+
+        // Clear vertex array (removes stray lines)
+        Arrays.fill(vertexArray, 0);
 
         int index = 0;
         for (Line line: lines) {
@@ -88,9 +91,9 @@ public class DebugDraw {
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, vboID);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, Arrays.copyOfRange(vertexArray, 0, lines.size() * 6 * 2));
+        glBufferSubData(GL_ARRAY_BUFFER, 0, vertexArray);
 
-        // Use shader
+        // Use shader and upload camera projection and view
         shader.use();
         shader.uploadMat4f("uProjection", Window.getWorld().getCamera().getProjectionMatrix());
         shader.uploadMat4f("uView", Window.getWorld().getCamera().getViewMatrix());
@@ -110,9 +113,6 @@ public class DebugDraw {
 
         // Detach shader
         shader.detach();
-
-        // Clear vertex array (removes stray lines, so they aren't drawn again)
-        Arrays.fill(vertexArray, 0);
     }
 
     public static void addLine(Vector2f from, Vector2f to, Vector3f color, int lifetime, boolean isBackground) {

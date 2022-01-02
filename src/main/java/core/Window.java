@@ -1,7 +1,12 @@
 package core;
 
+import gui.GuiElement;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
+import org.lwjgl.openal.AL;
+import org.lwjgl.openal.ALC;
+import org.lwjgl.openal.ALCCapabilities;
+import org.lwjgl.openal.ALCapabilities;
 import renderer.*;
 import util.Logger;
 import world.Overworld;
@@ -14,6 +19,7 @@ import org.lwjgl.opengl.GL;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.openal.ALC10.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -31,13 +37,18 @@ public class Window {
     public Vector4f clearColor;
 
     private static Window window;
+
+    private long audioContext;
+    private long audioDevice;
+
     private static World currentWorld;
+    private static GuiElement focusedElement;
 
     private Window() {
         width = 1920;
         height = 1080;
         title = GAME_NAME + " (In-game)";
-        clearColor = new Vector4f(1, 1, 1, 1);
+        clearColor = new Vector4f(0.6f, 0.8f, 1, 1);
     }
 
     public static void changeWorld(int newWorld) {
@@ -60,6 +71,10 @@ public class Window {
     public void run() {
         init();
         loop();
+
+        // Destroy audio context
+        alcDestroyContext(audioContext);
+        alcCloseDevice(audioDevice);
 
         // Free the memory
         glfwFreeCallbacks(glfwWindow);
@@ -103,6 +118,21 @@ public class Window {
 
         // Make window visible
         glfwShowWindow(glfwWindow);
+
+        // Initialize the audio device
+        String defaultDevice = alcGetString(0, ALC_DEFAULT_DEVICE_SPECIFIER);
+        audioDevice = alcOpenDevice(defaultDevice);
+
+        int[] attributes = {0};
+        audioContext = alcCreateContext(audioDevice, attributes);
+        alcMakeContextCurrent(audioContext);
+
+        ALCCapabilities alcCapabilities = ALC.createCapabilities(audioDevice);
+        ALCapabilities alCapabilities = AL.createCapabilities(alcCapabilities);
+
+        if (!alCapabilities.OpenAL10) {
+            Logger.critical("Unsupported audio library.");
+        }
 
         // This line is critical for LWJGL's interoperation with GLFW's
         // OpenGL context, or any context that is managed externally.
@@ -151,7 +181,7 @@ public class Window {
             glEnable(GL_BLEND);
 
             // Render pass 2. Render graphics
-            DebugDraw.beginFrame();
+            if (Settings.ENABLE_DEBUG) DebugDraw.beginFrame();
 
             framebuffer.bind();
 
@@ -161,9 +191,9 @@ public class Window {
             if (dt >= 0) {
                 Renderer.bindShader(defaultShader);
                 currentWorld.update(dt);
-                DebugDraw.draw(true);
+                if (Settings.ENABLE_DEBUG) DebugDraw.draw(true);
                 currentWorld.render();
-                DebugDraw.draw(false);
+                if (Settings.ENABLE_DEBUG) DebugDraw.draw(false);
             }
 
             framebuffer.unbind();

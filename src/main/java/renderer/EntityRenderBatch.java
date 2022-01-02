@@ -1,9 +1,7 @@
 package renderer;
 
-import component.SpriteRenderer;
 import core.Window;
 import entity.Entity;
-import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 import org.joml.Vector4i;
@@ -142,7 +140,7 @@ public class EntityRenderBatch implements Comparable<EntityRenderBatch> {
 
         Vector4f color = entity.getAppearance().getColor();
         ArrayList<Vector2f[]> texCoords = entity.getAppearance().getTexCoords();
-        ArrayList<Vector4i> texPlaces = entity.getAppearance().getTexPlaces();
+        ArrayList<Vector4i> texPlaces = entity.getAppearance().getPlaces();
 
         for (int i = 0; i < texCoords.size(); i++) {
             Vector2f[] places = {

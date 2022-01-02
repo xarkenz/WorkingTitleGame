@@ -2,9 +2,8 @@ package entity;
 
 import core.KeyListener;
 import core.MouseListener;
-import org.joml.Vector2f;
 import org.joml.Vector4i;
-import renderer.EntityAppearance;
+import util.EntityAppearance;
 
 import org.joml.Vector2d;
 import org.joml.Vector2i;
@@ -14,7 +13,8 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class Player extends Entity {
 
-    private float movementSpeed = 500;
+    private double movementSpeed = 500;
+    private double jumpSpeed = 200;
     private float jumpDelay = 0;
     private boolean crouching = false;
     private Vector2i spawnPoint;
@@ -30,15 +30,8 @@ public class Player extends Entity {
     public void start() {
         super.start();
 
-        Vector4i texCoords = AssetPool.getEntityTexCoords("player_test/player_test_idle");
-        Vector2f texSize = new Vector2f(AssetPool.getEntityTexture().getWidth(), AssetPool.getEntityTexture().getHeight());
-        Vector2f[] vertexCoords = {
-                new Vector2f((texCoords.x + texCoords.z) / texSize.x, (texCoords.y + texCoords.w) / texSize.y),
-                new Vector2f((texCoords.x + texCoords.z) / texSize.x, texCoords.y / texSize.y),
-                new Vector2f(texCoords.x / texSize.x, texCoords.y / texSize.y),
-                new Vector2f(texCoords.x / texSize.x, (texCoords.y + texCoords.w) / texSize.y)
-        };
-        appearance.addTexElement(vertexCoords, new Vector4i(-6, 0, 24, 32));
+        appearance.addImage(AssetPool.getEntityImage("player_test/player_test_idle"), new Vector4i(-6, 0, 24, 32));
+        appearance.addImage(AssetPool.getEntityImage("player_test/player_test_run"), new Vector4i(-6, 0, 24, 32));
     }
 
     @Override
@@ -48,14 +41,14 @@ public class Player extends Entity {
         }
         if (jumpDelay <= 0) {
             if (KeyListener.isKeyPressed(GLFW_KEY_SPACE) && isGrounded) {
-                collisionBox.vy = 256;
+                collisionBox.vy = jumpSpeed;
                 jumpDelay = 0.5f;
             }
         } else {
             jumpDelay -= dt;
         }
 
-        if (KeyListener.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
+        if (KeyListener.isKeyPressed(GLFW_KEY_Z)) {
             crouching = true;
             collisionBox.h = 23;
         } else {
@@ -81,6 +74,14 @@ public class Player extends Entity {
         appearance.setFlipH(facing > 0.25 || facing < -0.25);
 
         super.update(dt);
+
+        if (Math.abs(collisionBox.vx) >= 0.2f) {
+            appearance.showImage(0, false);
+            appearance.showImage(1, true);
+        } else {
+            appearance.showImage(0, true);
+            appearance.showImage(1, false);
+        }
     }
 
     public void respawn() {
@@ -91,7 +92,7 @@ public class Player extends Entity {
 
         collisionBox.setPosition(-collisionBox.w / 2, 0);
         while (isColliding()) {
-            collisionBox.y++;
+            collisionBox.y += 16;
         }
     }
 

@@ -144,26 +144,6 @@ public class CollisionBox {
         return firstHit.y == -1 || secondHit.y == -1;
     }
 
-    /*public boolean collide(CollisionBox rect, double dt) {
-        return collide(rect, dt, 0);
-    }
-
-    public boolean collide(CollisionBox rect, double dt, double timeUsed) {
-        Vector3d collision = getCollision(rect, dt, timeUsed);
-
-        // Advance to time of collision
-        x += vx * collision.z * dt;
-        y += vy * collision.z * dt;
-
-        // Calculate new velocity after collision
-        double dot = (vx * collision.y + vy * collision.x) * (1 - timeUsed - collision.z);
-        setVelocity(dot * collision.y, dot * collision.x);
-
-        // Advance with new velocity for remaining time
-        x += vx * (1 - timeUsed - collision.z) * dt;
-        y += vy * (1 - timeUsed - collision.z) * dt;
-    }*/
-
     public Vector3d getCollision(CollisionBox rect, double dt) {
         return getCollision(rect, dt, 0);
     }
@@ -214,17 +194,14 @@ public class CollisionBox {
             normalX = 0;
             normalY = 0;
             entryTime = 1 - timeUsed;
+        } else if (xEntryTime > yEntryTime) {
+            normalX = xEntryPos < 0 ? 1 : -1;
+            normalY = 0;
         } else {
-            if (xEntryTime > yEntryTime) {
-                normalX = xEntryPos < 0 ? 1 : -1;
-                normalY = 0;
-            } else {
-                normalY = yEntryPos < 0 ? 1 : -1;
-                normalX = 0;
-            }
+            normalY = yEntryPos < 0 ? 1 : -1;
+            normalX = 0;
         }
 
-//        System.out.println(vy + " " + normalX + " " + normalY + " " + entryTime);
         return new Vector3d(normalX, normalY, entryTime);
     }
 

@@ -12,41 +12,119 @@ public class Chunk {
     private final Vector2i position;
     private final World world;
     private boolean isDirty;
+
     private final BlockType[][] blockTypes;
     private final BlockState[][] blockStates;
     private final BlockQuad[][] blockQuads;
     private final boolean[][] blocksDirty;
+    private final int[][] blockLights;
+    private final int[][] skyLights;
 
     public Chunk(Vector2i position, World world) {
         this.position = position;
         this.world = world;
         this.isDirty = true;
-        this.blockTypes = new BlockType[SIZE][SIZE];
-        this.blockStates = new BlockState[SIZE][SIZE];
-        this.blockQuads = new BlockQuad[SIZE * 2][SIZE * 2];
-        this.blocksDirty = new boolean[SIZE][SIZE];
+
+        blockTypes = new BlockType[SIZE][SIZE];
+        blockStates = new BlockState[SIZE][SIZE];
+        blockQuads = new BlockQuad[SIZE * 2][SIZE * 2];
+        blocksDirty = new boolean[SIZE][SIZE];
+        blockLights = new int[SIZE][SIZE];
+        skyLights = new int[SIZE][SIZE];
+
+        for (int[] inner : skyLights) Arrays.fill(inner, 15);
+        for (boolean[] inner : blocksDirty) Arrays.fill(inner, true);
     }
 
     public void start() {
-        for (boolean[] inner : blocksDirty) {
-            Arrays.fill(inner, true);
-        }
         update(0);
     }
 
-    private BlockType getAdjacentBlockType(int x, int y, int dx, int dy) {
-        Vector2i chunkOffset = new Vector2i();
-        if (x + dx < 0) chunkOffset.x = -1;
-        else if (x + dx >= SIZE) chunkOffset.x = 1;
-        if (y + dy < 0) chunkOffset.y = -1;
-        else if (y + dy >= SIZE) chunkOffset.y = 1;
+    private void adjustBlockLight(int x, int y) {
+        Vector2i[] d = {new Vector2i(0, 1), new Vector2i(1, 0), new Vector2i(0, -1), new Vector2i(-1, 0)};
 
-        if (chunkOffset.equals(0, 0)) {
-            return getBlockType(x + dx, y + dy);
-        } else {
-            Chunk containingChunk = world.getLoadedChunk(chunkOffset.add(position));
-            if (containingChunk == null) return null;
-            return containingChunk.getBlockType(Math.floorMod(x + dx, SIZE), Math.floorMod(y + dy, SIZE));
+        int[] lights = new int[4];
+        for (int i = 0; i < 4; i++) {
+            Vector2i chunkOffset = new Vector2i();
+            if (x + d[i].x < 0) chunkOffset.x = -1;
+            else if (x + d[i].x >= SIZE) chunkOffset.x = 1;
+            if (y + d[i].y < 0) chunkOffset.y = -1;
+            else if (y + d[i].y >= SIZE) chunkOffset.y = 1;
+
+            if (chunkOffset.equals(0, 0)) {
+                lights[i] = getBlockLight(x + d[i].x, y + d[i].y);
+            } else {
+                Chunk containingChunk = world.getLoadedChunk(chunkOffset.add(position));
+                if (containingChunk == null) continue;
+                lights[i] = containingChunk.getBlockLight(Math.floorMod(x + d[i].x, SIZE), Math.floorMod(y + d[i].y, SIZE));
+            }
+        }
+
+        int light = Math.max(Arrays.stream(lights).max().getAsInt() - 1, getBlockType(x, y) == null ? 0 : getBlockType(x, y).light());
+
+        if (getBlockLight(x, y) == light) return;
+        blockLights[x][y] = light;
+
+        for (int i = 0; i < 4; i++) {
+            Vector2i chunkOffset = new Vector2i();
+            if (x + d[i].x < 0) chunkOffset.x = -1;
+            else if (x + d[i].x >= SIZE) chunkOffset.x = 1;
+            if (y + d[i].y < 0) chunkOffset.y = -1;
+            else if (y + d[i].y >= SIZE) chunkOffset.y = 1;
+
+            if (chunkOffset.equals(0, 0)) {
+                adjustBlockLight(x + d[i].x, y + d[i].y);
+                isDirty = true;
+            } else {
+                Chunk containingChunk = world.getLoadedChunk(chunkOffset.add(position));
+                if (containingChunk == null) continue;
+                containingChunk.adjustBlockLight(Math.floorMod(x + d[i].x, SIZE), Math.floorMod(y + d[i].y, SIZE));
+                containingChunk.setChunkDirty(true);
+            }
+        }
+    }
+
+    private void adjustSkyLight(int x, int y) {
+        Vector2i[] d = {new Vector2i(0, 1), new Vector2i(1, 0), new Vector2i(0, -1), new Vector2i(-1, 0)};
+
+        int[] lights = new int[4];
+        for (int i = 0; i < 4; i++) {
+            Vector2i chunkOffset = new Vector2i();
+            if (x + d[i].x < 0) chunkOffset.x = -1;
+            else if (x + d[i].x >= SIZE) chunkOffset.x = 1;
+            if (y + d[i].y < 0) chunkOffset.y = -1;
+            else if (y + d[i].y >= SIZE) chunkOffset.y = 1;
+
+            if (chunkOffset.equals(0, 0)) {
+                lights[i] = getSkyLight(x + d[i].x, y + d[i].y);
+            } else {
+                Chunk containingChunk = world.getLoadedChunk(chunkOffset.add(position));
+                if (containingChunk == null) continue;
+                lights[i] = containingChunk.getSkyLight(Math.floorMod(x + d[i].x, SIZE), Math.floorMod(y + d[i].y, SIZE));
+            }
+        }
+
+        int light = Math.max(Arrays.stream(lights).max().getAsInt() - 1, getBlockType(x, y) == null && lights[0] == 15 ? 15 : 0);
+
+        if (getSkyLight(x, y) == light) return;
+        skyLights[x][y] = light;
+
+        for (int i = 1; i < 4; i++) {
+            Vector2i chunkOffset = new Vector2i();
+            if (x + d[i].x < 0) chunkOffset.x = -1;
+            else if (x + d[i].x >= SIZE) chunkOffset.x = 1;
+            if (y + d[i].y < 0) chunkOffset.y = -1;
+            else if (y + d[i].y >= SIZE) chunkOffset.y = 1;
+
+            if (chunkOffset.equals(0, 0)) {
+                adjustSkyLight(x + d[i].x, y + d[i].y);
+                isDirty = true;
+            } else {
+                Chunk containingChunk = world.getLoadedChunk(chunkOffset.add(position));
+                if (containingChunk == null) continue;
+                containingChunk.adjustSkyLight(Math.floorMod(x + d[i].x, SIZE), Math.floorMod(y + d[i].y, SIZE));
+                containingChunk.setChunkDirty(true);
+            }
         }
     }
 
@@ -83,14 +161,14 @@ public class Chunk {
                         setBlockQuad(x, y, 2, null);
                         setBlockQuad(x, y, 3, null);
                     } else {
-                        BlockType upLeft = getAdjacentBlockType(x, y, -1, 1);
-                        BlockType up = getAdjacentBlockType(x, y, 0, 1);
-                        BlockType upRight = getAdjacentBlockType(x, y, 1, 1);
-                        BlockType left = getAdjacentBlockType(x, y, -1, 0);
-                        BlockType right = getAdjacentBlockType(x, y, 1, 0);
-                        BlockType downLeft = getAdjacentBlockType(x, y, -1, -1);
-                        BlockType down = getAdjacentBlockType(x, y, 0, -1);
-                        BlockType downRight = getAdjacentBlockType(x, y, 1, -1);
+                        BlockType upLeft = getBlockType(x - 1, y + 1);
+                        BlockType up = getBlockType(x, y + 1);
+                        BlockType upRight = getBlockType(x + 1, y + 1);
+                        BlockType left = getBlockType(x - 1, y);
+                        BlockType right = getBlockType(x + 1, y);
+                        BlockType downLeft = getBlockType(x - 1, y - 1);
+                        BlockType down = getBlockType(x, y - 1);
+                        BlockType downRight = getBlockType(x + 1, y - 1);
 
                         int topLeftShape = !block.connectsTo(up) ? (!block.connectsTo(left) ? 0 : 1) : (!block.connectsTo(left) ? 2 : (!block.connectsTo(upLeft) ? 3 : 4));
                         int topRightShape = !block.connectsTo(up) ? (!block.connectsTo(right) ? 0 : 1) : (!block.connectsTo(right) ? 2 : (!block.connectsTo(upRight) ? 3 : 4));
@@ -123,7 +201,19 @@ public class Chunk {
     }
 
     public BlockType getBlockType(int x, int y) {
-        return blockTypes[x][y];
+        Vector2i chunkOffset = new Vector2i();
+        if (x < 0) chunkOffset.x = -1;
+        else if (x >= SIZE) chunkOffset.x = 1;
+        if (y < 0) chunkOffset.y = -1;
+        else if (y >= SIZE) chunkOffset.y = 1;
+
+        if (chunkOffset.equals(0, 0)) {
+            return blockTypes[x][y];
+        } else {
+            Chunk containingChunk = world.getLoadedChunk(chunkOffset.add(position));
+            if (containingChunk == null) return null;
+            return containingChunk.getBlockType(Math.floorMod(x, SIZE), Math.floorMod(y, SIZE));
+        }
     }
 
     public BlockState getBlockState(int x, int y) {
@@ -146,6 +236,42 @@ public class Chunk {
         return blocksDirty[x][y];
     }
 
+    public int getBlockLight(int x, int y) {
+        Vector2i chunkOffset = new Vector2i();
+        if (x < 0) chunkOffset.x = -1;
+        else if (x >= SIZE) chunkOffset.x = 1;
+        if (y < 0) chunkOffset.y = -1;
+        else if (y >= SIZE) chunkOffset.y = 1;
+
+        if (chunkOffset.equals(0, 0)) {
+            return blockLights[x][y];
+        } else {
+            Chunk containingChunk = world.getLoadedChunk(chunkOffset.add(position));
+            if (containingChunk == null) return 0;
+            return containingChunk.getBlockLight(Math.floorMod(x, SIZE), Math.floorMod(y, SIZE));
+        }
+    }
+
+    public int getSkyLight(int x, int y) {
+        Vector2i chunkOffset = new Vector2i();
+        if (x < 0) chunkOffset.x = -1;
+        else if (x >= SIZE) chunkOffset.x = 1;
+        if (y < 0) chunkOffset.y = -1;
+        else if (y >= SIZE) chunkOffset.y = 1;
+
+        if (chunkOffset.equals(0, 0)) {
+            return skyLights[x][y];
+        } else {
+            Chunk containingChunk = world.getLoadedChunk(chunkOffset.add(position));
+            if (containingChunk == null) return 15;
+            return containingChunk.getSkyLight(Math.floorMod(x, SIZE), Math.floorMod(y, SIZE));
+        }
+    }
+
+    public int getVisualLight(int x, int y) {
+        return Math.max(getBlockLight(x, y), getSkyLight(x, y));
+    }
+
     public void setChunkDirty(boolean dirty) {
         isDirty = dirty;
     }
@@ -155,6 +281,8 @@ public class Chunk {
         blockStates[x][y] = state;
         blocksDirty[x][y] = true;
         spreadDirty(x, y);
+        adjustBlockLight(x, y);
+        adjustSkyLight(x, y);
     }
 
     public void setBlock(int x, int y, BlockType type) {

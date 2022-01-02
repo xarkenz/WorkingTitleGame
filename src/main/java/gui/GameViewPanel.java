@@ -1,4 +1,4 @@
-package editor;
+package gui;
 
 import imgui.ImGui;
 import imgui.ImVec2;

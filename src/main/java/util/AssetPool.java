@@ -1,8 +1,7 @@
 package util;
 
 import core.BlockSheet;
-import core.SpriteSheet;
-import org.joml.Vector4i;
+import core.Sound;
 import renderer.Shader;
 import renderer.Texture;
 
@@ -15,8 +14,8 @@ public class AssetPool {
     private static final Map<String, Shader> shaders = new HashMap<>();
     private static final Texture blockTexture = new Texture();
     private static final Texture entityTexture = new Texture();
-    private static final Map<String, SpriteSheet> spritesheets = new HashMap<>();
     private static final Map<String, BlockSheet> blocksheets = new HashMap<>();
+    private static final Map<String, Sound> sounds = new HashMap<>();
 
     public static Shader getShader(String path) {
         File file = new File(path);
@@ -40,25 +39,18 @@ public class AssetPool {
         return blockTexture;
     }
 
-    public static Vector4i getBlockTexCoords(String name) {
-        Vector4i texCoords = blockTexture.getTexCoords(name);
-        return texCoords != null ? texCoords : blockTexture.addImage(name, "assets/textures/block/" + name + ".png");
+    public static Image getBlockImage(String name) {
+        Image image = blockTexture.getImage(name);
+        return image != null ? image : blockTexture.addImage(name, "assets/textures/block/" + name + ".png");
     }
 
     public static Texture getEntityTexture() {
         return entityTexture;
     }
 
-    public static Vector4i getEntityTexCoords(String name) {
-        Vector4i texCoords = entityTexture.getTexCoords(name);
-        return texCoords != null ? texCoords : entityTexture.addImage(name, "assets/textures/entity/" + name + ".png");
-    }
-
-    public static void addSpriteSheet(String path, SpriteSheet spritesheet) {
-        File file = new File(path);
-        if (!spritesheets.containsKey(file.getAbsolutePath())) {
-            spritesheets.put(file.getAbsolutePath(), spritesheet);
-        }
+    public static Image getEntityImage(String name) {
+        Image image = entityTexture.getImage(name);
+        return image != null ? image : entityTexture.addImage(name, "assets/textures/entity/" + name + ".png");
     }
 
     public static void addBlockSheet(String path, BlockSheet blocksheet) {
@@ -68,17 +60,22 @@ public class AssetPool {
         }
     }
 
-    public static SpriteSheet getSpritesheet(String path) {
-        File file = new File(path);
-        if (!spritesheets.containsKey(file.getAbsolutePath()))
-            Logger.critical("Invalid asset request '" + path + "'.");
-        return spritesheets.getOrDefault(file.getAbsolutePath(), null);
-    }
-
     public static BlockSheet getBlocksheet(String path) {
         File file = new File(path);
-        if (!blocksheets.containsKey(file.getAbsolutePath()))
-            Logger.critical("Invalid asset request '" + path + "'.");
-        return blocksheets.getOrDefault(file.getAbsolutePath(), null);
+        if (blocksheets.containsKey(file.getAbsolutePath()))
+            return blocksheets.get(file.getAbsolutePath());
+        Logger.critical("Invalid block sheet request: '" + path + "'.");
+        return null;
     }
+
+    public static Sound getSound(String path) {
+        File file = new File(path);
+        if (!sounds.containsKey(file.getAbsolutePath())) {
+            Sound sound = new Sound(path);
+            sounds.put(file.getAbsolutePath(), sound);
+            return sound;
+        }
+        return sounds.get(file.getAbsolutePath());
+    }
+
 }

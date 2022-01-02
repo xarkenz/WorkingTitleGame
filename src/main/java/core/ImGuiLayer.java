@@ -1,7 +1,7 @@
 package core;
 
-import editor.GameViewPanel;
-import editor.PropertiesPanel;
+import gui.GameViewPanel;
+import gui.PropertiesPanel;
 import imgui.*;
 import imgui.callback.ImStrConsumer;
 import imgui.callback.ImStrSupplier;

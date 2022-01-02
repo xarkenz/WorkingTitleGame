@@ -6,7 +6,7 @@ import org.joml.Vector2d;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import renderer.DebugDraw;
-import renderer.EntityAppearance;
+import util.EntityAppearance;
 import util.CollisionBox;
 import util.Settings;
 
@@ -79,7 +79,7 @@ public abstract class Entity {
         DebugDraw.addRect(new Vector2f().set(collisionBox.getCenter()), new Vector2f().set(collisionBox.getSize()), new Vector3f(0.909804f, 0.294118f, 0.200000f), 0, 1);
         Vector2f eyePos = new Vector2f().set(collisionBox.getCenter().x, getEyeLevel());
         DebugDraw.addLine(eyePos, new Vector2f(eyePos.x + (float) Math.cos(facing * 2 * Math.PI) * Settings.BLOCK_SIZE,
-                eyePos.y + (float) Math.sin(facing * 2 * Math.PI) * Settings.BLOCK_SIZE), new Vector3f(0.717647f, 0.384314f, 0.941176f));
+                eyePos.y + (float) Math.sin(facing * 2 * Math.PI) * Settings.BLOCK_SIZE), new Vector3f(0.223529f, 0.627451f, 0.980392f));
     }
 
     public boolean isColliding() {
@@ -97,11 +97,12 @@ public abstract class Entity {
 //        DebugDraw.addRect(new Vector2f().set(area.getCenter()), new Vector2f().set(area.getSize()), new Vector3f(0, 0.5f, 0), 0, 1);
         LinkedList<CollisionBox> colliders = new LinkedList<>();
 
-        for (int blockY = (int) Math.floor(area.y / Settings.BLOCK_SIZE); blockY <= (int) Math.floor((area.y + area.h) / Settings.BLOCK_SIZE); blockY++) {
-            for (int blockX = (int) Math.floor(area.x / Settings.BLOCK_SIZE); blockX <= (int) Math.floor((area.x + area.w) / Settings.BLOCK_SIZE); blockX++) {
+        for (int blockY = (int) Math.floor(area.y / Settings.BLOCK_SIZE); blockY <= (int) Math.floor((area.y + area.h) / Settings.BLOCK_SIZE) - ((area.y + area.h) % Settings.BLOCK_SIZE == 0 ? 1 : 0); blockY++) {
+            for (int blockX = (int) Math.floor(area.x / Settings.BLOCK_SIZE); blockX <= (int) Math.floor((area.x + area.w) / Settings.BLOCK_SIZE) - ((area.x + area.w) % Settings.BLOCK_SIZE == 0 ? 1 : 0); blockX++) {
                 BlockType block = Window.getWorld().getBlockType(blockX, blockY);
                 if (block != null) {
                     CollisionBox blockArea = new CollisionBox(blockX * Settings.BLOCK_SIZE, blockY * Settings.BLOCK_SIZE, Settings.BLOCK_SIZE, Settings.BLOCK_SIZE);
+                    if (collisionBox.isTouching(blockArea)) continue;
                     colliders.add(blockArea);
 //                    DebugDraw.addRect(new Vector2f().set(blockArea.getCenter()), new Vector2f().set(blockArea.getSize()), new Vector3f(0, 0.5f, 0), 0, 1);
                 }

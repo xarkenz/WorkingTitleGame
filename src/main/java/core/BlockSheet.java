@@ -2,7 +2,9 @@ package core;
 
 import block.BlockQuad;
 import block.BlockType;
+import org.joml.Vector2i;
 import util.AssetPool;
+import util.Image;
 import util.Logger;
 
 import com.google.gson.*;
@@ -39,14 +41,12 @@ public class BlockSheet {
             "fill_inward_corners"
     };
 
-    private Vector4i texCoords;
     private BlockType type;
     private int blockSize;
     private int format;
 
-    public BlockSheet(Vector4i texCoords, BlockType type) {
+    public BlockSheet(Image image, BlockType type) {
         this.type = type;
-        this.texCoords = texCoords;
 
         this.blockSize = 16;
         this.format = 0;
@@ -87,11 +87,11 @@ public class BlockSheet {
         List<Integer> texShapes = new ArrayList<>();
 
         // More information needed unless format is 'single'
-        if (this.format == 0) {
+        if (format == 0) {
             numBlocks = 1;
-            this.blockSize = texCoords.z; // May have a different height if animated
+            blockSize = image.getSize().x; // May have a different height if animated
         } else {
-            this.blockSize = json.get("texture_size").getAsInt();
+            blockSize = json.get("texture_size").getAsInt();
 
             JsonArray textures = json.get("textures").getAsJsonArray();
             for (int j = 0; j < textures.size(); j++) {
@@ -124,8 +124,8 @@ public class BlockSheet {
 
         float texW = AssetPool.getBlockTexture().getWidth();
         float texH = AssetPool.getBlockTexture().getHeight();
-        int currentX = texCoords.x;
-        int currentY = texCoords.y + texCoords.w - blockSize;
+        int currentX = image.getPos()[0].x;
+        int currentY = image.getPos()[0].y + image.getSize().y - blockSize;
         for (int i = 0; i < numBlocks; i++) {
             for (int j = 0; j < 4; j++) {
                 float topY = 0;
@@ -159,23 +159,18 @@ public class BlockSheet {
                         bottomY = currentY;
                     }
                 }
-                
-                Vector2f[] quadTexCoords = {
-                        new Vector2f(rightX / texW, topY / texH),
-                        new Vector2f(rightX / texW, bottomY / texH),
-                        new Vector2f(leftX / texW, bottomY / texH),
-                        new Vector2f(leftX / texW, topY / texH)
-                };
+
+                Image quadImage = new Image(new Vector2i(blockSize / 2, blockSize / 2), new Vector2i[]{new Vector2i((int) leftX, (int) bottomY)});
 
                 if (this.format == 0) {
-                    BlockQuad.add(new BlockQuad(type, quadTexCoords, blockSize, j, format));
+                    BlockQuad.add(new BlockQuad(type, quadImage, blockSize, j, format));
                 } else if (this.format == 1 || this.format == 2) {
-                    BlockQuad.add(new BlockQuad(type, quadTexCoords, blockSize, j, format, texShapes.get(i)));
+                    BlockQuad.add(new BlockQuad(type, quadImage, blockSize, j, format, texShapes.get(i)));
                 }
             }
 
             currentX += blockSize;
-            if (currentX > texCoords.x + texCoords.z)
+            if (currentX > image.getPos()[0].x + image.getSize().x)
                 Logger.critical(type.name() + ".json: More textures are defined than exist in block sheet.");
         }
     }

@@ -34,6 +34,7 @@ public abstract class World {
     protected List<Entity> entities = new ArrayList<>();
     protected HashMap<Vector2i, Chunk> chunks = new HashMap<>();
     protected boolean worldLoaded = false;
+    protected WorldGenerator generator = new WorldGenerator(this);
 
     public World() {
 
@@ -87,20 +88,17 @@ public abstract class World {
         return getChunk(chunkPos).getBlockState(Math.floorMod(x, Chunk.SIZE), Math.floorMod(y, Chunk.SIZE));
     }
 
+    public int getBlockLight(int x, int y) {
+        Vector2i chunkPos = new Vector2i(Math.floorDiv(x, Chunk.SIZE), Math.floorDiv(y, Chunk.SIZE));
+        return getChunk(chunkPos).getBlockLight(Math.floorMod(x, Chunk.SIZE), Math.floorMod(y, Chunk.SIZE));
+    }
+
     public GameObject createGameObject(String name) {
         GameObject go = new GameObject(name);
         go.addComponent(new Transform());
         go.transform = go.getComponent(Transform.class);
         return go;
     }
-
-    /*public void addGameObject(GameObject go) {
-        gameObjects.add(go);
-        if (isRunning) {
-            go.start();
-            renderer.add(go);
-        }
-    }*/
 
     public void addEntity(Entity entity) {
         entities.add(entity);

@@ -1,47 +1,49 @@
 package block;
 
 import org.joml.Vector2f;
-import renderer.Texture;
+import util.Image;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import static org.lwjgl.glfw.GLFW.glfwGetTime;
 
 public class BlockQuad {
 
     private static final HashMap<BlockType, List<BlockQuad>> QUADS = new HashMap<>();
 
     private final BlockType type;
-    private final Vector2f[] texCoords;
+    private final Image image;
     private final int format;
     private final int size;
     private final int pos;
     private int shape;
     private String attribute, value;
 
-    public BlockQuad(BlockType type, Vector2f[] texCoords, int size, int pos, int format) {
+    public BlockQuad(BlockType type, Image image, int size, int pos, int format) {
         // Format 0
         this.type = type;
-        this.texCoords = texCoords;
+        this.image = image;
         this.size = size;
         this.pos = pos;
         this.format = format;
     }
 
-    public BlockQuad(BlockType type, Vector2f[] texCoords, int size, int pos, int format, int shape) {
+    public BlockQuad(BlockType type, Image image, int size, int pos, int format, int shape) {
         // Formats 1 and 2
         this.type = type;
-        this.texCoords = texCoords;
+        this.image = image;
         this.size = size;
         this.pos = pos;
         this.format = format;
         this.shape = shape;
     }
 
-    public BlockQuad(BlockType type, Vector2f[] texCoords, int size, int pos, int format, String attribute, String value) {
+    public BlockQuad(BlockType type, Image image, int size, int pos, int format, String attribute, String value) {
         // Format 3
         this.type = type;
-        this.texCoords = texCoords;
+        this.image = image;
         this.size = size;
         this.pos = pos;
         this.format = format;
@@ -49,8 +51,8 @@ public class BlockQuad {
         this.value = value;
     }
 
-    public Vector2f[] getTexCoords() {
-        return texCoords;
+    public Vector2f[] getTexCoords(double time) {
+        return image.getTexCoords(time);
     }
 
     public int getPos() {

@@ -1,16 +1,13 @@
 package renderer;
 
+import org.joml.Vector2i;
 import org.joml.Vector4i;
 import org.lwjgl.BufferUtils;
+import util.Image;
 import util.Logger;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.Arrays;
 import java.util.HashMap;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -19,7 +16,7 @@ import static org.lwjgl.stb.STBImage.*;
 
 public class Texture {
 
-    private final HashMap<String, Vector4i> images;
+    private final HashMap<String, Image> images;
     private ByteBuffer atlas;
     private int texID;
     private int width, height;
@@ -48,7 +45,7 @@ public class Texture {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    public Vector4i addImage(String name, String path) {
+    public Image addImage(String name, String path) {
         // Create buffers to store image data from stbi_load
         IntBuffer imageW = BufferUtils.createIntBuffer(1);
         IntBuffer imageH = BufferUtils.createIntBuffer(1);
@@ -56,9 +53,9 @@ public class Texture {
         // Flip images vertically for use in the atlas
         stbi_set_flip_vertically_on_load(true);
         // Load the image from file
-        ByteBuffer image = stbi_load(path, imageW, imageH, channels, 0);
+        ByteBuffer loaded = stbi_load(path, imageW, imageH, channels, 0);
 
-        if (image == null) {
+        if (loaded == null) {
             Logger.critical("Unable to load image '" + path + "': Not found.");
             return null;
         }
@@ -70,7 +67,7 @@ public class Texture {
 
             if (atlas == null) atlas = BufferUtils.createByteBuffer(width * height * 4);
             atlas.rewind();
-            image.rewind();
+            loaded.rewind();
 
             // buffer size = width * height * channels
             ByteBuffer newAtlas = BufferUtils.createByteBuffer(newWidth * newHeight * 4);
@@ -81,7 +78,7 @@ public class Texture {
                     atlas.get(data, 0, width * 4);
                 else
                     // Then, inject the new image data
-                    image.get(data, 0, imageW.get(0) * 4);
+                    loaded.get(data, 0, imageW.get(0) * 4);
                 newAtlas.put(data);
             }
 
@@ -94,13 +91,26 @@ public class Texture {
             return null;
         }
 
-        Vector4i texCoords = new Vector4i(nextX, nextY, imageW.get(0), imageH.get(0));
-        images.put(name, texCoords);
+        Vector2i[] pos = {new Vector2i(nextX, nextY)};
+        int h = imageH.get(0);
+        if (h == 192) {
+            pos = new Vector2i[]{
+                    new Vector2i(nextX, nextY + 160),
+                    new Vector2i(nextX, nextY + 128),
+                    new Vector2i(nextX, nextY + 96),
+                    new Vector2i(nextX, nextY + 64),
+                    new Vector2i(nextX, nextY + 32),
+                    new Vector2i(nextX, nextY),
+            };
+            h = 32;
+        }
+        Image image = new Image(new Vector2i(imageW.get(0), h), pos);
+        images.put(name, image);
         nextY += imageH.get(0);
 
-        stbi_image_free(image.rewind());
+        stbi_image_free(loaded.rewind());
 
-        return texCoords;
+        return image;
     }
 
     public void upload() {
@@ -126,33 +136,9 @@ public class Texture {
             // Allocate space on texture, initialize to atlas data
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, atlas.rewind());
         }
-
-        /*if (atlas != null) {
-            BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            atlas.rewind();
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    int r = atlas.get();
-                    int g = atlas.get();
-                    int b = atlas.get();
-                    int a = atlas.get();
-                    r = r < 0 ? r + 256 : r;
-                    g = g < 0 ? g + 256 : g;
-                    b = b < 0 ? b + 256 : b;
-                    a = a < 0 ? a + 256 : a;
-                    image.setRGB(x, y, (a << 24) + (r << 16) + (g << 8) + b);
-                }
-            }
-            atlas.rewind();
-            try {
-                ImageIO.write(image, "png", new File("image.png"));
-            } catch (IOException e) {
-                Logger.critical(e.toString());
-            }
-        }*/
     }
 
-    public Vector4i getTexCoords(String name) {
+    public Image getImage(String name) {
         return images.get(name);
     }
 

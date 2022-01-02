@@ -32,7 +32,7 @@ public class Overworld extends World {
     public void init() {
         loadResources();
 
-        holdingBlock = BlockType.stone;
+        holdingBlock = BlockType.phylumus_block;
         camera = new Camera(new Vector2f());
 
         generate();
@@ -54,50 +54,43 @@ public class Overworld extends World {
         Logger.info("Loading resources...");
         AssetPool.getShader("assets/shaders/default.glsl");
 
-        for (BlockType block: BlockType.values()) {
-            AssetPool.getBlockTexCoords(block.name());
-        }
         for (BlockType block : BlockType.values()) {
-            BlockSheet sheet = new BlockSheet(AssetPool.getBlockTexCoords(block.name()), block);
+            BlockSheet sheet = new BlockSheet(AssetPool.getBlockImage(block.name()), block);
             AssetPool.addBlockSheet(block.name(), sheet);
         }
         AssetPool.getBlockTexture().upload();
 
-        AssetPool.getEntityTexCoords("player_test/player_test_idle");
-//        AssetPool.getEntityTexCoords("player_test_run");
+        AssetPool.getEntityImage("player_test/player_test_idle");
+        AssetPool.getEntityImage("player_test/player_test_run");
         AssetPool.getEntityTexture().upload();
+
+        AssetPool.getSound("assets/sounds/block/wood_big_0.ogg");
+        AssetPool.getSound("assets/sounds/block/wood_big_1.ogg");
+        AssetPool.getSound("assets/sounds/block/wood_big_2.ogg");
+        AssetPool.getSound("assets/sounds/block/fart.ogg");
+        AssetPool.getSound("assets/sounds/block/blart.ogg");
+        AssetPool.getSound("assets/sounds/block/dong.ogg");
     }
 
     @Override
     public void update(float dt) {
-        viewContainer.update(dt);
-        camera.adjustProjection();
-
-        for (GameObject object : gameObjects) {
-            object.update(dt);
-        }
-        for (Entity entity : entities) {
-            entity.update(dt);
-            if (entity instanceof Player)
-                viewContainer.getComponent(EditorCamera.class).setTargetPos(new Vector2f().set(entity.getCenter()));
-        }
-        for (Chunk chunk : chunks.values()) {
-            chunk.update(dt);
-        }
-
         Vector2i worldPos = new Vector2i((int) Math.floor(MouseListener.getWorldX() / Settings.BLOCK_SIZE), (int) Math.floor(MouseListener.getWorldY() / Settings.BLOCK_SIZE));
 
         DebugDraw.addRect(new Vector2f(
                 Settings.BLOCK_SIZE * (int) Math.floor(MouseListener.getWorldX() / Settings.BLOCK_SIZE) + Settings.BLOCK_SIZE / 2f,
                 Settings.BLOCK_SIZE * (int) Math.floor(MouseListener.getWorldY() / Settings.BLOCK_SIZE) + Settings.BLOCK_SIZE / 2f
-                ), new Vector2f(14, 14), new Vector3f(0.223529f, 0.627451f, 0.980392f));
+                ), new Vector2f(14, 14), new Vector3f(0.717647f, 0.384314f, 0.941176f));
 
         if (MouseListener.mouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
-            if (getBlockType(worldPos.x, worldPos.y) != null)
+            if (getBlockType(worldPos.x, worldPos.y) != null) {
                 setBlock(worldPos.x, worldPos.y, null);
+                AssetPool.getSound("assets/sounds/block/wood_big_0.ogg").play();
+            }
         } else if (MouseListener.mouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
-            if (getBlockType(worldPos.x, worldPos.y) == null)
+            if (getBlockType(worldPos.x, worldPos.y) == null) {
                 setBlock(worldPos.x, worldPos.y, holdingBlock);
+                AssetPool.getSound("assets/sounds/block/wood_big_1.ogg").play();
+            }
         } else if (MouseListener.mouseButtonDown(GLFW_MOUSE_BUTTON_MIDDLE)) {
             if (delay <= 0) {
                 boolean getNext = false;
@@ -117,6 +110,18 @@ public class Overworld extends World {
         }
 
         if (delay > 0) delay -= dt;
+
+        viewContainer.update(dt);
+        camera.adjustProjection();
+
+        for (Entity entity : entities) {
+            entity.update(dt);
+            if (entity instanceof Player)
+                viewContainer.getComponent(EditorCamera.class).setTargetPos(new Vector2f().set(entity.getCenter()));
+        }
+        for (Chunk chunk : chunks.values()) {
+            chunk.update(dt);
+        }
     }
 
     @Override
@@ -132,11 +137,11 @@ public class Overworld extends World {
     @Override
     public void generate() {
         Logger.info("Generating world...");
-        for (int y = -32; y < 0; y++) {
-            for (int x = -16; x < 16; x++) {
-                setBlock(x, y, BlockType.dirt);
-            }
-        }
+        generator.generateBaseTerrain(40, 100, 14, BlockType.stone);
+        generator.worms(-40, 100, 1, 6, 8, 3, 10, 40, 30, null, x -> x != null && x.equals(BlockType.stone));
+        generator.applyTopLayer(50, 6, 9, 3, BlockType.dirt, x -> x != null && x.equals(BlockType.stone));
+        generator.applyTopLayer(50, 1, BlockType.grassy_dirt, x -> x != null && x.equals(BlockType.dirt));
+        generator.worms(0, 70, 2, 1, 3, 2, 1, 3, 70, BlockType.packed_dirt, x -> x != null && x.equals(BlockType.stone));
     }
 
 }

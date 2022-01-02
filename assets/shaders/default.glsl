@@ -6,13 +6,14 @@ layout (location = 2) in vec2 aTexCoords;
 
 uniform mat4 uProjection;
 uniform mat4 uView;
+uniform sampler2D uTexture;
 
 out vec4 fColor;
 out vec2 fTexCoords;
 
 void main() {
     fColor = aColor;
-    fTexCoords = aTexCoords;
+    fTexCoords = aTexCoords / textureSize(uTexture, 0);
     gl_Position = uProjection * uView * vec4(aPos, 1.0);
 }
 

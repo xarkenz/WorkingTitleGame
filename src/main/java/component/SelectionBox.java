@@ -1,9 +1,8 @@
 package component;
 
-import editor.PropertiesPanel;
+import gui.PropertiesPanel;
 import core.GameObject;
 import core.Prefabs;
-import core.Window;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 
