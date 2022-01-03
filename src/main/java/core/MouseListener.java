@@ -168,8 +168,16 @@ public class MouseListener {
         return (float) get().worldY;
     }
 
+    public static Vector2f getGameViewportPos() {
+        return get().gameViewportPos;
+    }
+
     public static void setGameViewportPos(Vector2f gameViewportPos) {
         get().gameViewportPos.set(gameViewportPos);
+    }
+
+    public static Vector2f getGameViewportSize() {
+        return get().gameViewportSize;
     }
 
     public static void setGameViewportSize(Vector2f gameViewportSize) {

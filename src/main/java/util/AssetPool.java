@@ -12,12 +12,14 @@ import java.util.Map;
 
 public class AssetPool {
     private static final Map<String, Shader> shaders = new HashMap<>();
-    private static final Texture blockTexture = new Texture();
+    private static final Texture guiTexture = new Texture();
     private static final Texture entityTexture = new Texture();
+    private static final Texture blockTexture = new Texture();
     private static final Map<String, BlockSheet> blocksheets = new HashMap<>();
     private static final Map<String, Sound> sounds = new HashMap<>();
 
-    public static Shader getShader(String path) {
+    public static Shader getShader(String name) {
+        String path = "assets/shaders/" + name + ".glsl";
         File file = new File(path);
         if (shaders.containsKey(file.getAbsolutePath())) {
             return shaders.get(file.getAbsolutePath());
@@ -35,13 +37,13 @@ public class AssetPool {
         }
     }
 
-    public static Texture getBlockTexture() {
-        return blockTexture;
+    public static Texture getGuiTexture() {
+        return guiTexture;
     }
 
-    public static Image getBlockImage(String name) {
-        Image image = blockTexture.getImage(name);
-        return image != null ? image : blockTexture.addImage(name, "assets/textures/block/" + name + ".png");
+    public static Image getGuiImage(String name) {
+        Image image = guiTexture.getImage(name);
+        return image != null ? image : guiTexture.addImage(name, "assets/textures/gui/" + name + ".png");
     }
 
     public static Texture getEntityTexture() {
@@ -51,6 +53,15 @@ public class AssetPool {
     public static Image getEntityImage(String name) {
         Image image = entityTexture.getImage(name);
         return image != null ? image : entityTexture.addImage(name, "assets/textures/entity/" + name + ".png");
+    }
+
+    public static Texture getBlockTexture() {
+        return blockTexture;
+    }
+
+    public static Image getBlockImage(String name) {
+        Image image = blockTexture.getImage(name);
+        return image != null ? image : blockTexture.addImage(name, "assets/textures/block/" + name + ".png");
     }
 
     public static void addBlockSheet(String path, BlockSheet blocksheet) {
@@ -68,7 +79,8 @@ public class AssetPool {
         return null;
     }
 
-    public static Sound getSound(String path) {
+    public static Sound getSound(String name) {
+        String path = "assets/sounds/" + name + ".ogg";
         File file = new File(path);
         if (!sounds.containsKey(file.getAbsolutePath())) {
             Sound sound = new Sound(path);

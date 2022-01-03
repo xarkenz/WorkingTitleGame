@@ -12,6 +12,8 @@ public class GridLines extends Component {
 
     @Override
     public void update(float dt) {
+        if (!Settings.ENABLE_BLOCK_GRID && !Settings.ENABLE_CHUNK_GRID) return;
+
         Camera camera = Window.getWorld().getCamera();
         Vector2f cameraPos = camera.position;
         Vector2f projectionSize = camera.getProjectionSize();
@@ -27,23 +29,23 @@ public class GridLines extends Component {
             int height = (int) (projectionSize.y * camera.getZoom()) + Settings.BLOCK_SIZE * 10;
 
             int maxLines = Math.max(numXLines, numYLines);
-            Vector3f color = new Vector3f(0.7f, 0.7f, 0.7f);
-            Vector3f chunkColor = new Vector3f(0.2f, 0.2f, 0.2f);
+            Vector3f color = new Vector3f(1, 1, 1);
+            Vector3f chunkColor = new Vector3f(1, 1, 0);
 
             for (int i = 0; i < maxLines; i++) {
                 int x = firstX + (Settings.BLOCK_SIZE * i);
                 int y = firstY + (Settings.BLOCK_SIZE * i);
 
                 if (i < numXLines) {
-                    if ((x / Settings.BLOCK_SIZE) % Chunk.SIZE == 0)
+                    if ((x / Settings.BLOCK_SIZE) % Chunk.SIZE == 0 && Settings.ENABLE_CHUNK_GRID)
                         DebugDraw.addLine(new Vector2f(x, firstY), new Vector2f(x, firstY + height), chunkColor, 1, false);
-                    else
+                    else if (Settings.ENABLE_BLOCK_GRID)
                         DebugDraw.addLine(new Vector2f(x, firstY), new Vector2f(x, firstY + height), color, 1, true);
                 }
                 if (i < numYLines) {
-                    if ((y / Settings.BLOCK_SIZE) % Chunk.SIZE == 0)
+                    if ((y / Settings.BLOCK_SIZE) % Chunk.SIZE == 0 && Settings.ENABLE_CHUNK_GRID)
                         DebugDraw.addLine(new Vector2f(firstX, y), new Vector2f(firstX + width, y), chunkColor, 1, false);
-                    else
+                    else if (Settings.ENABLE_BLOCK_GRID)
                         DebugDraw.addLine(new Vector2f(firstX, y), new Vector2f(firstX + width, y), color, 1, true);
                 }
             }

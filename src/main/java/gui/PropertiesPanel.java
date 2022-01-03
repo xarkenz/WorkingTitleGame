@@ -4,7 +4,7 @@ import imgui.ImGui;
 import core.GameObject;
 import core.MouseListener;
 import renderer.PickingTexture;
-import world.World;
+import world.Scene;
 
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
 
@@ -19,7 +19,7 @@ public class PropertiesPanel {
         this.pickingTexture = pickingTexture;
     }
 
-    public void update(float dt, World currentScene) {
+    public void update(float dt, Scene currentScene) {
         debounce -= dt;
 
         if (MouseListener.mouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && debounce < 0) {

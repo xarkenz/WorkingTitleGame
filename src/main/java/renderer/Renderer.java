@@ -2,6 +2,7 @@ package renderer;
 
 import block.Chunk;
 import entity.Entity;
+import gui.GuiElement;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +16,10 @@ public class Renderer {
     public Renderer() {
         chunks = new ArrayList<>();
         entityBatches = new ArrayList<>();
+    }
+
+    public void addGuiElement(GuiElement element) {
+
     }
 
     public void addEntity(Entity entity) {

@@ -1,7 +1,7 @@
 package block;
 
 import org.joml.Vector2i;
-import world.World;
+import world.Scene;
 
 import java.util.Arrays;
 
@@ -10,7 +10,7 @@ public class Chunk {
     public static final int SIZE = 16;
 
     private final Vector2i position;
-    private final World world;
+    private final Scene world;
     private boolean isDirty;
 
     private final BlockType[][] blockTypes;
@@ -20,7 +20,7 @@ public class Chunk {
     private final int[][] blockLights;
     private final int[][] skyLights;
 
-    public Chunk(Vector2i position, World world) {
+    public Chunk(Vector2i position, Scene world) {
         this.position = position;
         this.world = world;
         this.isDirty = true;
@@ -192,7 +192,7 @@ public class Chunk {
         return position;
     }
 
-    public World getWorld() {
+    public Scene getWorld() {
         return world;
     }
 

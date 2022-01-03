@@ -10,6 +10,7 @@ import core.Camera;
 import core.GameObject;
 import core.GameObjectSerializer;
 import entity.Entity;
+import gui.GuiElement;
 import renderer.Renderer;
 
 import com.google.gson.Gson;
@@ -22,21 +23,21 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Optional;
 
-public abstract class World {
+public abstract class Scene {
 
     protected Renderer renderer = new Renderer();
     protected Camera camera;
     protected boolean isRunning = false;
-    protected List<GameObject> gameObjects = new ArrayList<>();
-    protected List<Entity> entities = new ArrayList<>();
+    protected ArrayList<GameObject> gameObjects = new ArrayList<>();
+    protected ArrayList<GuiElement> guiElements = new ArrayList<>();
+    protected ArrayList<Entity> entities = new ArrayList<>();
     protected HashMap<Vector2i, Chunk> chunks = new HashMap<>();
     protected boolean worldLoaded = false;
     protected WorldGenerator generator = new WorldGenerator(this);
 
-    public World() {
+    public Scene() {
 
     }
 
@@ -45,6 +46,10 @@ public abstract class World {
     }
 
     public void start() {
+        for (GuiElement element : guiElements) {
+            element.start();
+            renderer.addGuiElement(element);
+        }
         for (Entity entity : entities) {
             entity.start();
             renderer.addEntity(entity);
@@ -100,11 +105,19 @@ public abstract class World {
         return go;
     }
 
+    public void addGuiElement(GuiElement element) {
+        guiElements.add(element);
+        if (isRunning) {
+            element.start();
+            renderer.addGuiElement(element);
+        }
+    }
+
     public void addEntity(Entity entity) {
         entities.add(entity);
         if (isRunning) {
             entity.start();
-//            renderer.add(entity);
+            renderer.addEntity(entity);
         }
     }
 
@@ -124,6 +137,13 @@ public abstract class World {
         return result.orElse(null);
     }
 
+    public GuiElement getGuiElement(String name) {
+        Optional<GuiElement> result = guiElements.stream()
+                .filter(element -> element.getName().equals(name))
+                .findFirst();
+        return result.orElse(null);
+    }
+
     public Entity getEntity(int uid) {
         Optional<Entity> result = entities.stream()
                 .filter(entity -> entity.getUID() == uid)
@@ -131,7 +151,9 @@ public abstract class World {
         return result.orElse(null);
     }
 
-    public abstract void update(float dt);
+    public void update(float dt) {
+
+    }
 
     public abstract void render();
 
@@ -152,7 +174,7 @@ public abstract class World {
 
         try {
             FileWriter writer = new FileWriter("overworld.json");
-            List<GameObject> objsToSerialize = new ArrayList<>();
+            ArrayList<GameObject> objsToSerialize = new ArrayList<>();
             for (GameObject obj : gameObjects) {
                 if (obj.getDoSerialize()) {
                     objsToSerialize.add(obj);

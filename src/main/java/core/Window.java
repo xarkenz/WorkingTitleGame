@@ -1,7 +1,6 @@
 package core;
 
 import gui.GuiElement;
-import org.joml.Vector2f;
 import org.joml.Vector4f;
 import org.lwjgl.openal.AL;
 import org.lwjgl.openal.ALC;
@@ -9,8 +8,8 @@ import org.lwjgl.openal.ALCCapabilities;
 import org.lwjgl.openal.ALCapabilities;
 import renderer.*;
 import util.Logger;
-import world.Overworld;
-import world.World;
+import world.WorldScene;
+import world.Scene;
 import util.AssetPool;
 import util.Settings;
 
@@ -41,7 +40,7 @@ public class Window {
     private long audioContext;
     private long audioDevice;
 
-    private static World currentWorld;
+    private static Scene currentWorld;
     private static GuiElement focusedElement;
 
     private Window() {
@@ -53,7 +52,7 @@ public class Window {
 
     public static void changeWorld(int newWorld) {
         if (newWorld == 0) {
-            currentWorld = new Overworld();
+            currentWorld = new WorldScene();
         } else {
             Logger.critical("Invalid world ID:", newWorld);
         }
@@ -159,8 +158,8 @@ public class Window {
         float endTime;
         float dt = -1;
 
-        Shader defaultShader = AssetPool.getShader("assets/shaders/default.glsl");
-        Shader pickingShader = AssetPool.getShader("assets/shaders/picking_texture.glsl");
+        Shader defaultShader = AssetPool.getShader("default");
+        Shader pickingShader = AssetPool.getShader("picking_texture");
 
         while (!glfwWindowShouldClose(glfwWindow)) {
             // Poll events
@@ -210,7 +209,7 @@ public class Window {
         currentWorld.save();
     }
 
-    public static World getWorld() {
+    public static Scene getWorld() {
         return currentWorld;
     }
 
@@ -241,4 +240,13 @@ public class Window {
     public static ImGuiLayer getImGuiLayer() {
         return get().imGuiLayer;
     }
+
+    public static GuiElement getFocus() {
+        return focusedElement;
+    }
+
+    public static void setFocus(GuiElement element) {
+        focusedElement = element;
+    }
+
 }

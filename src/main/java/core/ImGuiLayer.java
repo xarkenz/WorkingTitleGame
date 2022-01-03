@@ -9,7 +9,7 @@ import imgui.flag.*;
 import imgui.gl3.ImGuiImplGl3;
 import imgui.type.ImBoolean;
 import renderer.PickingTexture;
-import world.World;
+import world.Scene;
 
 import java.io.File;
 
@@ -183,7 +183,7 @@ public class ImGuiLayer {
         imGuiGl3.init("#version 330 core");
     }
 
-    public void update(float dt, World currentScene) {
+    public void update(float dt, Scene currentScene) {
         startFrame(dt);
 
         // Any Dear ImGui code SHOULD go between ImGui.newFrame()/ImGui.render() methods

@@ -7,7 +7,7 @@ import java.util.Random;
 
 public class WorldGenerator {
 
-    private final World world;
+    private final Scene world;
     private final Random random;
 
     private double interpolate(double a, double b, double t) {
@@ -21,12 +21,12 @@ public class WorldGenerator {
         //return (b - a) * (t * (t * 6 - 15) + 10) * t * t * t + a; // whatever the hell this is
     }
 
-    public WorldGenerator(World world) {
+    public WorldGenerator(Scene world) {
         this.random = new Random();
         this.world = world;
     }
 
-    public World getWorld() {
+    public Scene getWorld() {
         return world;
     }
 

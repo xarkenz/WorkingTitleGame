@@ -4,31 +4,24 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 public class Line {
-    private Vector2f from;
-    private Vector2f to;
-    private Vector3f color;
+    private final Vector2f from;
+    private final Vector2f to;
+    private final Vector3f color;
     private int lifetime;
-    private boolean bg;
+    private final boolean isBackground;
+    private final boolean isStatic;
 
-    public Line(Vector2f from, Vector2f to, Vector3f color, int lifetime) {
+    public Line(Vector2f from, Vector2f to, Vector3f color, int lifetime, boolean isBackground, boolean isStatic) {
         this.from = from;
         this.to = to;
         this.color = color;
         this.lifetime = lifetime;
-        this.bg = false;
-    }
-
-    public Line(Vector2f from, Vector2f to, Vector3f color, int lifetime, boolean isBackground) {
-        this.from = from;
-        this.to = to;
-        this.color = color;
-        this.lifetime = lifetime;
-        this.bg = isBackground;
+        this.isBackground = isBackground;
+        this.isStatic = isStatic;
     }
 
     public int beginFrame() {
-        this.lifetime--;
-        return this.lifetime;
+        return --lifetime;
     }
 
     public Vector2f getFrom() {
@@ -44,6 +37,10 @@ public class Line {
     }
 
     public boolean isBackground() {
-        return bg;
+        return isBackground;
+    }
+
+    public boolean isStatic() {
+        return isStatic;
     }
 }
