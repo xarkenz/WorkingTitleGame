@@ -1,35 +1,32 @@
 package renderer;
 
 import core.Window;
-import entity.Entity;
-import org.joml.Vector2f;
-import org.joml.Vector4f;
-import org.joml.Vector4i;
+import gui.GuiElement;
 import util.AssetPool;
-
-import java.util.ArrayList;
+import util.Logger;
 
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 
-public class EntityRenderBatch implements Comparable<EntityRenderBatch> {
+public class GuiRenderBatch implements Comparable<GuiRenderBatch> {
 
     private final int MAX_BATCH_SIZE = 1000;
 
-    private final Entity[] entities;
+    private final GuiElement[] guiElements;
+    private int nextIndex;
     private int numElements;
-    private final Float[] vertices;
+    private final float[] vertices;
 
     private int vaoID, vboID;
     private final int zIndex;
 
-    public EntityRenderBatch(int z) {
+    public GuiRenderBatch(int z) {
         zIndex = z;
-        entities = new Entity[MAX_BATCH_SIZE];
-        vertices = new Float[MAX_BATCH_SIZE * 4 * 9];
-        numElements = 0;
+        guiElements = new GuiElement[MAX_BATCH_SIZE];
+        vertices = new float[MAX_BATCH_SIZE * 4 * 9];
+        nextIndex = 0;
     }
 
     public void start() {
@@ -59,44 +56,32 @@ public class EntityRenderBatch implements Comparable<EntityRenderBatch> {
         glEnableVertexAttribArray(3);
     }
 
-    public boolean add(Entity entity) {
-        int index = -1;
-        for (int i = 0; i < entities.length; i++) {
-            if (entities[i] == null) {
-                index = i;
-                break;
-            }
+    public boolean add(GuiElement guiElement) {
+        guiElement.setVertexIndex(nextIndex);
+        nextIndex = guiElement.loadVertexData(vertices, nextIndex);
+
+        if (nextIndex == -1) {
+            guiElement.setVertexIndex(-1);
+            return false;
         }
 
-        if (index == -1 || numElements + entity.getAppearance().numElements() > MAX_BATCH_SIZE) return false;
-
-        entities[index] = entity;
-        numElements += entity.getAppearance().numElements();
-
-        loadVertices(index);
-
+        guiElements[numElements++] = guiElement;
         return true;
     }
 
     public void render() {
         boolean rebuffer = false;
-        for (int i = 0; i < entities.length; i++) {
-            if (entities[i] != null && entities[i].getDirty()) {
-                loadVertices(i);
-                entities[i].setDirty(false);
+        for (GuiElement element : guiElements) {
+            if (element != null && element.isDirty()) {
+                element.loadVertexData(vertices, element.getVertexIndex());
+                element.setDirty(false);
                 rebuffer = true;
             }
         }
 
         if (rebuffer) {
-            float[] primitiveVertices = new float[vertices.length];
-            for (int i = 0; i < vertices.length; i++) {
-                if (vertices[i] != null)
-                    primitiveVertices[i] = vertices[i];
-            }
-
             glBindBuffer(GL_ARRAY_BUFFER, vboID);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, primitiveVertices);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, vertices);
         }
 
         Shader shader = Renderer.getBoundShader();
@@ -104,11 +89,11 @@ public class EntityRenderBatch implements Comparable<EntityRenderBatch> {
         shader.uploadMat4f("uProjection", Window.getWorld().getCamera().getProjectionMatrix());
         shader.uploadMat4f("uStaticProjection", Window.getWorld().getCamera().getStaticProjection());
 
-        Texture tex = AssetPool.getEntityTexture();
+        Texture tex = AssetPool.getGuiTexture();
         glActiveTexture(GL_TEXTURE0 + tex.getID());
         tex.bind();
 
-        shader.uploadTexture("uTexture", AssetPool.getEntityTexture().getID());
+        shader.uploadTexture("uTexture", tex.getID());
 
         glBindVertexArray(vaoID);
         glEnableVertexAttribArray(0);
@@ -126,48 +111,6 @@ public class EntityRenderBatch implements Comparable<EntityRenderBatch> {
 
         tex.unbind();
         shader.detach();
-    }
-
-    private void loadVertices(int index) {
-        Entity entity = entities[index];
-
-        // Find offset within array (4 vertices per quad)
-        int offset = index * 4 * 9; // WRONG
-
-        Vector4f color = entity.getAppearance().getColor();
-        ArrayList<Vector2f[]> texCoords = entity.getAppearance().getTexCoords();
-        ArrayList<Vector4i> texPlaces = entity.getAppearance().getPlaces();
-
-        for (int i = 0; i < texCoords.size(); i++) {
-            Vector2f[] places = {
-                    new Vector2f(texPlaces.get(i).x + texPlaces.get(i).z, texPlaces.get(i).y + texPlaces.get(i).w),
-                    new Vector2f(texPlaces.get(i).x + texPlaces.get(i).z, texPlaces.get(i).y),
-                    new Vector2f(texPlaces.get(i).x, texPlaces.get(i).y),
-                    new Vector2f(texPlaces.get(i).x, texPlaces.get(i).y + texPlaces.get(i).w)
-            };
-
-            // Create the vertices for the quad
-            for (int v = 0; v < 4; v++) {
-                // Vertex position
-                vertices[offset] = (float) entity.getPosition().x + places[v].x;
-                vertices[offset + 1] = (float) entity.getPosition().y + places[v].y;
-
-                // Vertex color
-                vertices[offset + 2] = color.x;
-                vertices[offset + 3] = color.y;
-                vertices[offset + 4] = color.z;
-                vertices[offset + 5] = color.w;
-
-                // Texture coordinates
-                vertices[offset + 6] = texCoords.get(i)[v].x;
-                vertices[offset + 7] = texCoords.get(i)[v].y;
-
-                // World position
-                vertices[offset + 8] = 0f;
-
-                offset += 9;
-            }
-        }
     }
 
     private int[] generateIndices() {
@@ -200,7 +143,7 @@ public class EntityRenderBatch implements Comparable<EntityRenderBatch> {
     }
 
     @Override
-    public int compareTo(EntityRenderBatch o) {
+    public int compareTo(GuiRenderBatch o) {
         return Integer.compare(zIndex, o.getZIndex());
     }
 }

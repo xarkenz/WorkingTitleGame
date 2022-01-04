@@ -11,15 +11,31 @@ public class Renderer {
 
     private final ArrayList<ChunkRenderer> chunks;
     private final ArrayList<EntityRenderBatch> entityBatches;
+    private final ArrayList<GuiRenderBatch> guiBatches;
     private static Shader currentShader;
 
     public Renderer() {
         chunks = new ArrayList<>();
         entityBatches = new ArrayList<>();
+        guiBatches = new ArrayList<>();
     }
 
     public void addGuiElement(GuiElement element) {
+        boolean added = false;
+        for (GuiRenderBatch batch : guiBatches) {
+            if (batch.getZIndex() == 0) {
+                added = batch.add(element);
+                break;
+            }
+        }
 
+        if (!added) {
+            GuiRenderBatch newBatch = new GuiRenderBatch(0);
+            newBatch.start();
+            guiBatches.add(newBatch);
+            newBatch.add(element);
+            Collections.sort(guiBatches);
+        }
     }
 
     public void addEntity(Entity entity) {
@@ -83,6 +99,9 @@ public class Renderer {
             chunk.render();
         }
         for (EntityRenderBatch batch : entityBatches) {
+            batch.render();
+        }
+        for (GuiRenderBatch batch : guiBatches) {
             batch.render();
         }
     }

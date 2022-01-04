@@ -17,17 +17,6 @@ import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 
 public class ChunkRenderer implements Comparable<ChunkRenderer> {
 
-    private final int POS_SIZE = 2;
-    private final int COLOR_SIZE = 4;
-    private final int TEX_COORDS_SIZE = 2;
-
-    private final int VERTEX_SIZE = POS_SIZE + COLOR_SIZE + TEX_COORDS_SIZE;
-    private final int VERTEX_SIZE_BYTES = VERTEX_SIZE * Float.BYTES;
-
-    private final int POS_OFFSET = 0;
-    private final int COLOR_OFFSET = POS_OFFSET + POS_SIZE * Float.BYTES;
-    private final int TEX_COORDS_OFFSET = COLOR_OFFSET + COLOR_SIZE * Float.BYTES;
-
     private Chunk chunk;
     private final float[] vertices;
     private int vaoID, vboID;
@@ -35,8 +24,8 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
 
     public ChunkRenderer(int z) {
         zIndex = z;
-        //                   |-- # of squares to draw --|- 4 per square -|
-        vertices = new float[Chunk.SIZE * Chunk.SIZE * 4 * 4 * VERTEX_SIZE];
+        //                   |-- # of squares to draw --|- 4 per square
+        vertices = new float[Chunk.SIZE * Chunk.SIZE * 4 * 4 * 9];
     }
 
     public void start() {
@@ -56,14 +45,17 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
 
         // Enable the buffer attribute pointers
-        glVertexAttribPointer(0, POS_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, POS_OFFSET);
+        glVertexAttribPointer(0, 2, GL_FLOAT, false, 9 * Float.BYTES, 0);
         glEnableVertexAttribArray(0);
 
-        glVertexAttribPointer(1, COLOR_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, COLOR_OFFSET);
+        glVertexAttribPointer(1, 4, GL_FLOAT, false, 9 * Float.BYTES, 2 * Float.BYTES);
         glEnableVertexAttribArray(1);
 
-        glVertexAttribPointer(2, TEX_COORDS_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, TEX_COORDS_OFFSET);
+        glVertexAttribPointer(2, 2, GL_FLOAT, false, 9 * Float.BYTES, 6 * Float.BYTES);
         glEnableVertexAttribArray(2);
+
+        glVertexAttribPointer(3, 1, GL_FLOAT, false, 9 * Float.BYTES, 8 * Float.BYTES);
+        glEnableVertexAttribArray(3);
     }
 
     public Chunk getChunk() {
@@ -85,8 +77,9 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
         }
 
         Shader shader = Renderer.getBoundShader();
-        shader.uploadMat4f("uProjection", Window.getWorld().getCamera().getProjectionMatrix());
         shader.uploadMat4f("uView", Window.getWorld().getCamera().getViewMatrix());
+        shader.uploadMat4f("uProjection", Window.getWorld().getCamera().getProjectionMatrix());
+        shader.uploadMat4f("uStaticProjection", Window.getWorld().getCamera().getStaticProjection());
 
         Texture tex = AssetPool.getBlockTexture();
         glActiveTexture(tex.getID());
@@ -98,12 +91,14 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
         glEnableVertexAttribArray(2);
+        glEnableVertexAttribArray(3);
 
         glDrawElements(GL_TRIANGLES, Chunk.SIZE * Chunk.SIZE * 4 * 6, GL_UNSIGNED_INT, 0);
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
         glDisableVertexAttribArray(2);
+        glDisableVertexAttribArray(3);
         glBindVertexArray(0);
 
         tex.unbind();
@@ -145,10 +140,10 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
                 for (int p = 0; p < 4; p++) {
                     BlockQuad quad = chunk.getBlockQuad(x, y, p);
                     if (quad == null) {
-                        for (int i = 0; i < 4 * VERTEX_SIZE; i++) {
+                        for (int i = 0; i < 4 * 9; i++) {
                             vertices[offset + i] = 0;
                         }
-                        offset += 4 * VERTEX_SIZE;
+                        offset += 4 * 9;
                         continue;
                     }
 
@@ -214,7 +209,10 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
                         vertices[offset + 6] = texCoords[v].x;
                         vertices[offset + 7] = texCoords[v].y;
 
-                        offset += VERTEX_SIZE;
+                        // World position
+                        vertices[offset + 8] = 0;
+
+                        offset += 9;
                     }
                 }
             }

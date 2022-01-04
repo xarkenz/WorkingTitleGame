@@ -1,6 +1,7 @@
 package core;
 
 import org.joml.*;
+import util.Settings;
 
 public class Camera {
     private Matrix4f projectionMatrix, viewMatrix, inverseProjection, inverseView;
@@ -40,6 +41,13 @@ public class Camera {
 
     public Matrix4f getInverseProjection() {
         return inverseProjection;
+    }
+
+    public Matrix4f getStaticProjection() {
+        Matrix4f staticProjection = new Matrix4f();
+        float xOffset = projectionSize.x / Settings.GUI_SCALE;
+        float yOffset = projectionSize.y / Settings.GUI_SCALE;
+        return staticProjection.ortho(-xOffset, xOffset, -yOffset, yOffset, 0.0f, 100.0f);
     }
 
     public Matrix4f getInverseView() {

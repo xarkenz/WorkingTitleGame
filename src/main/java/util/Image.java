@@ -3,8 +3,6 @@ package util;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 
-import static org.lwjgl.glfw.GLFW.glfwGetTime;
-
 public class Image {
 
     private final Vector2i size;

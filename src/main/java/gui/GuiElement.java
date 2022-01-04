@@ -10,6 +10,10 @@ public abstract class GuiElement {
     protected boolean hovering = false;
     protected boolean focused = false;
 
+    protected boolean isDirty = true;
+
+    private int vertexIndex = -1;
+
     public GuiElement(String name, GuiElement parent, int x, int y, int w, int h) {
         this.name = name;
         this.parent = parent;
@@ -37,10 +41,11 @@ public abstract class GuiElement {
     public void resize(int w, int h) {
         width = w;
         height = h;
+        isDirty = true;
     }
 
-    public void loadVertexData(float[] vertices) {
-
+    public int loadVertexData(float[] vertices, int nextIndex) {
+        return nextIndex;
     }
 
     public boolean wantsMouse(int x, int y) {
@@ -76,6 +81,7 @@ public abstract class GuiElement {
     }
 
     public void setVisible(boolean visible) {
+        isDirty = visible != this.visible;
         this.visible = visible;
     }
 
@@ -84,6 +90,7 @@ public abstract class GuiElement {
     }
 
     public void setHovering(boolean hovering) {
+        isDirty = hovering != this.hovering;
         this.hovering = hovering;
     }
 
@@ -92,7 +99,24 @@ public abstract class GuiElement {
     }
 
     public void setFocused(boolean focused) {
+        isDirty = focused != this.focused;
         this.focused = focused;
+    }
+
+    public boolean isDirty() {
+        return isDirty;
+    }
+
+    public void setDirty(boolean dirty) {
+        isDirty = dirty;
+    }
+
+    public int getVertexIndex() {
+        return vertexIndex;
+    }
+
+    public void setVertexIndex(int vertexIndex) {
+        this.vertexIndex = vertexIndex;
     }
 
     public String toString() {

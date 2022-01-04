@@ -101,18 +101,11 @@ public class DebugDraw {
         glBindBuffer(GL_ARRAY_BUFFER, vboID);
         glBufferSubData(GL_ARRAY_BUFFER, 0, vertexArray);
 
-        Camera camera = Window.getWorld().getCamera();
-
-        Matrix4f staticProjection = new Matrix4f();
-        float xOffset = camera.getProjectionSize().x / Settings.GUI_SCALE;
-        float yOffset = camera.getProjectionSize().y / Settings.GUI_SCALE;
-        staticProjection.ortho(-xOffset, xOffset, -yOffset, yOffset, 0.0f, 100.0f);
-
         // Use shader and upload camera projection and view
         shader.use();
-        shader.uploadMat4f("uView", camera.getViewMatrix());
-        shader.uploadMat4f("uProjection", camera.getProjectionMatrix());
-        shader.uploadMat4f("uStaticProjection", staticProjection);
+        shader.uploadMat4f("uView", Window.getWorld().getCamera().getViewMatrix());
+        shader.uploadMat4f("uProjection", Window.getWorld().getCamera().getProjectionMatrix());
+        shader.uploadMat4f("uStaticProjection", Window.getWorld().getCamera().getStaticProjection());
 
         // Bind VAO
         glBindVertexArray(vaoID);

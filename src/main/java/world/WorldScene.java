@@ -43,7 +43,7 @@ public class WorldScene extends Scene {
         player.respawn();
         addEntity(player);
 
-        Button button = new Button("test_button", null, 0, 0, 50, 15, x -> AssetPool.getSound("block/dong").play());
+        Button button = new Button("test_button", null, -150, 100, 128, 96, x -> AssetPool.getSound("block/dong").play());
         addGuiElement(button);
         button.setVisible(true);
 
