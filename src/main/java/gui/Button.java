@@ -1,14 +1,12 @@
 package gui;
 
-import core.Window;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
 import renderer.DebugDraw;
+import renderer.Renderer;
 import util.AssetPool;
-import util.Logger;
-import util.Settings;
 
-import java.util.Arrays;
+import org.joml.Vector2f;
+import org.joml.Vector4f;
+
 import java.util.function.Consumer;
 
 import static org.lwjgl.glfw.GLFW.glfwGetTime;
@@ -16,13 +14,14 @@ import static org.lwjgl.glfw.GLFW.glfwGetTime;
 public class Button extends GuiElement {
 
     private final Consumer<GuiElement> callback;
-    private final Vector3f color;
+    private final Vector4f color;
     private final Vector2f[][] texCoords = new Vector2f[9][4];
+    private int[] batchIndices = null;
 
     public Button(String name, GuiElement parent, int x, int y, int w, int h, Consumer<GuiElement> callback) {
         super(name, parent, x, y, w, h);
         this.callback = callback;
-        this.color = new Vector3f(1, 0, 0);
+        this.color = new Vector4f(1, 1, 1, 1);
     }
 
     @Override
@@ -52,19 +51,19 @@ public class Button extends GuiElement {
 
     @Override
     public void update(float dt) {
-        DebugDraw.addRect(new Vector2f(posX, posY), new Vector2f(width, height), color, 0, 1, true);
+
     }
 
     @Override
     public void mousePress(int x, int y) {
-        color.set(0, 0.7f, 0);
+        color.set(0.7f, 0.7f, 0.7f, 1);
         isDirty = true;
     }
 
     @Override
     public void mouseDrag(int x, int y) {
-        if (wantsMouse(x, y)) color.set(0, 0.7f, 0);
-        else color.set(1, 0, 0);
+        if (wantsMouse(x, y)) color.set(0.7f, 0.7f, 0.7f, 1);
+        else color.set(1, 1, 1, 1);
     }
 
     @Override
@@ -72,21 +71,21 @@ public class Button extends GuiElement {
         if (wantsMouse(x, y)) {
             callback.accept(this);
         }
-        color.set(1, 0, 0);
+        color.set(1, 1, 1, 1);
         isDirty = true;
     }
 
     @Override
-    public int loadVertexData(float[] vertices, int nextIndex) {
+    public void updateGraphics(Renderer renderer) {
         int across = width / 8;
         int down = height / 8;
 
-        if (vertices.length < nextIndex + across * down * 4) {
-            //vertices = Arrays.copyOf(vertices, nextIndex + across * down * 4);
-            return -1;
-        } else if (!visible) {
-            return nextIndex + across * down * 4;
+        if (batchIndices != null) {
+            for (int index : batchIndices) {
+                renderer.removeImage(AssetPool.getGuiTexture().getID(), 0, index);
+            }
         }
+        batchIndices = new int[across * down];
 
         Vector2f[][] mappings = new Vector2f[across * down][4];
         mappings[0] = texCoords[0];
@@ -112,34 +111,17 @@ public class Button extends GuiElement {
                 new Vector2f(0, 0)
         };
 
-        int i = 0;
+        int index = 0;
         for (float y = posY + height / 2f; y >= posY - height / 2f + 8; y -= 8) {
             for (float x = posX - width / 2f; x <= posX + width / 2f - 8; x += 8) {
-                for (int v = 0; v < 4; v++) {
-                    // Vertex position
-                    vertices[nextIndex] = x + offsets[v].x;
-                    vertices[nextIndex + 1] = y + offsets[v].y;
-
-                    // Vertex color
-                    vertices[nextIndex + 2] = 1;
-                    vertices[nextIndex + 3] = 1;
-                    vertices[nextIndex + 4] = 1;
-                    vertices[nextIndex + 5] = 1;
-
-                    // Texture coordinates
-                    vertices[nextIndex + 6] = mappings[i][v].x + (hovering ? 24 : 0);
-                    vertices[nextIndex + 7] = mappings[i][v].y;
-
-                    // Static position
-                    vertices[nextIndex + 8] = 1;
-
-                    nextIndex += 9;
+                Vector2f[] positions = new Vector2f[4];
+                for (int i = 0; i < 4; i++) {
+                    positions[i] = offsets[i].add(x, y, new Vector2f());
                 }
-                i++;
+                batchIndices[index] = renderer.addImage(AssetPool.getGuiTexture(), 0, positions, color, mappings[index], true, visible);
+                index++;
             }
         }
-
-        return nextIndex;
     }
 
 }

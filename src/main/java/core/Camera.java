@@ -43,6 +43,10 @@ public class Camera {
         return inverseProjection;
     }
 
+    public Matrix4f getWorldProjection() {
+        return projectionMatrix.mul(viewMatrix, new Matrix4f());
+    }
+
     public Matrix4f getStaticProjection() {
         Matrix4f staticProjection = new Matrix4f();
         float xOffset = projectionSize.x / Settings.GUI_SCALE;

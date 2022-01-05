@@ -1,5 +1,7 @@
 package gui;
 
+import renderer.Renderer;
+
 public abstract class GuiElement {
 
     protected final String name;
@@ -44,8 +46,8 @@ public abstract class GuiElement {
         isDirty = true;
     }
 
-    public int loadVertexData(float[] vertices, int nextIndex) {
-        return nextIndex;
+    public void updateGraphics(Renderer renderer) {
+
     }
 
     public boolean wantsMouse(int x, int y) {

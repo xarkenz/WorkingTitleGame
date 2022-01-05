@@ -29,7 +29,6 @@ public class Player extends Entity {
     @Override
     public void start() {
         super.start();
-
         appearance.addImage(AssetPool.getEntityImage("player_test/player_test_idle"), new Vector4i(-6, 0, 24, 32));
         appearance.addImage(AssetPool.getEntityImage("player_test/player_test_run"), new Vector4i(-6, 0, 24, 32));
     }

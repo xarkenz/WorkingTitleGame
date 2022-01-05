@@ -1,8 +1,6 @@
 package renderer;
 
-import core.Camera;
 import core.Window;
-import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import util.AssetPool;
@@ -103,9 +101,9 @@ public class DebugDraw {
 
         // Use shader and upload camera projection and view
         shader.use();
-        shader.uploadMat4f("uView", Window.getWorld().getCamera().getViewMatrix());
-        shader.uploadMat4f("uProjection", Window.getWorld().getCamera().getProjectionMatrix());
-        shader.uploadMat4f("uStaticProjection", Window.getWorld().getCamera().getStaticProjection());
+        shader.uploadMat4f("uView", Window.getScene().getCamera().getViewMatrix());
+        shader.uploadMat4f("uProjection", Window.getScene().getCamera().getProjectionMatrix());
+        shader.uploadMat4f("uStaticProjection", Window.getScene().getCamera().getStaticProjection());
 
         // Bind VAO
         glBindVertexArray(vaoID);

@@ -27,6 +27,7 @@ public abstract class Entity {
     protected CollisionBox collisionBox;
     protected double eyeOffset = 0;
     protected EntityAppearance appearance;
+    protected int[] elementIndices;
 
     protected float accelGravity = 512;
     protected float accelResistance = 16;
@@ -44,6 +45,7 @@ public abstract class Entity {
         this.health = health;
         this.uid = NEXT_UID++;
         this.appearance = null;
+        this.elementIndices = null;
     }
 
     public void start() {
@@ -85,7 +87,7 @@ public abstract class Entity {
     public boolean isColliding() {
         for (int posY = (int) Math.floor(collisionBox.y / Settings.BLOCK_SIZE); posY <= (int) Math.floor((collisionBox.y + collisionBox.h) / Settings.BLOCK_SIZE); posY++) {
             for (int posX = (int) Math.floor(collisionBox.x / Settings.BLOCK_SIZE); posX <= (int) Math.floor((collisionBox.x + collisionBox.w) / Settings.BLOCK_SIZE); posX++) {
-                BlockType block = Window.getWorld().getBlockType(posX, posY);
+                BlockType block = Window.getScene().getBlockType(posX, posY);
                 if (block != null) return true;
             }
         }
@@ -99,7 +101,7 @@ public abstract class Entity {
 
         for (int blockY = (int) Math.floor(area.y / Settings.BLOCK_SIZE); blockY <= (int) Math.floor((area.y + area.h) / Settings.BLOCK_SIZE) - ((area.y + area.h) % Settings.BLOCK_SIZE == 0 ? 1 : 0); blockY++) {
             for (int blockX = (int) Math.floor(area.x / Settings.BLOCK_SIZE); blockX <= (int) Math.floor((area.x + area.w) / Settings.BLOCK_SIZE) - ((area.x + area.w) % Settings.BLOCK_SIZE == 0 ? 1 : 0); blockX++) {
-                BlockType block = Window.getWorld().getBlockType(blockX, blockY);
+                BlockType block = Window.getScene().getBlockType(blockX, blockY);
                 if (block != null) {
                     CollisionBox blockArea = new CollisionBox(blockX * Settings.BLOCK_SIZE, blockY * Settings.BLOCK_SIZE, Settings.BLOCK_SIZE, Settings.BLOCK_SIZE);
                     if (collisionBox.isTouching(blockArea)) continue;
@@ -146,7 +148,7 @@ public abstract class Entity {
         collisionBox.setVelocity(velocityX, velocityY);
     }
 
-    public boolean getDirty() {
+    public boolean isDirty() {
         return isDirty;
     }
 
@@ -170,4 +172,11 @@ public abstract class Entity {
         return appearance;
     }
 
+    public int[] getElementIndices() {
+        return elementIndices;
+    }
+
+    public void setElementIndices(int[] indices) {
+        elementIndices = indices;
+    }
 }

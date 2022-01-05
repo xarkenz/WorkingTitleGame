@@ -209,7 +209,7 @@ public class Window {
         currentWorld.save();
     }
 
-    public static Scene getWorld() {
+    public static Scene getScene() {
         return currentWorld;
     }
 

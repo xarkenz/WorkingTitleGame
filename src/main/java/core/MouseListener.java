@@ -80,7 +80,7 @@ public class MouseListener {
     }
 
     public static void calcOrtho() {
-        Camera camera = Window.getWorld().getCamera();
+        Camera camera = Window.getScene().getCamera();
 
         float currentX = getX() - get().gameViewportPos.x;
         float currentY = getY() - get().gameViewportPos.y;

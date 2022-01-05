@@ -14,7 +14,7 @@ public class GridLines extends Component {
     public void update(float dt) {
         if (!Settings.ENABLE_BLOCK_GRID && !Settings.ENABLE_CHUNK_GRID) return;
 
-        Camera camera = Window.getWorld().getCamera();
+        Camera camera = Window.getScene().getCamera();
         Vector2f cameraPos = camera.position;
         Vector2f projectionSize = camera.getProjectionSize();
 

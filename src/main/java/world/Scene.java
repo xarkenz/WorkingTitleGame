@@ -52,7 +52,7 @@ public abstract class Scene {
         }
         for (Entity entity : entities) {
             entity.start();
-            renderer.addEntity(entity);
+            entity.setElementIndices(renderer.addEntity(entity));
         }
         for (Chunk chunk : chunks.values()) {
             chunk.start();
@@ -117,7 +117,7 @@ public abstract class Scene {
         entities.add(entity);
         if (isRunning) {
             entity.start();
-            renderer.addEntity(entity);
+            entity.setElementIndices(renderer.addEntity(entity));
         }
     }
 

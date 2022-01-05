@@ -77,15 +77,14 @@ public class ChunkRenderer implements Comparable<ChunkRenderer> {
         }
 
         Shader shader = Renderer.getBoundShader();
-        shader.uploadMat4f("uView", Window.getWorld().getCamera().getViewMatrix());
-        shader.uploadMat4f("uProjection", Window.getWorld().getCamera().getProjectionMatrix());
-        shader.uploadMat4f("uStaticProjection", Window.getWorld().getCamera().getStaticProjection());
+        shader.uploadMat4f("uWorldProj", Window.getScene().getCamera().getWorldProjection());
+        shader.uploadMat4f("uStaticProj", Window.getScene().getCamera().getStaticProjection());
 
         Texture tex = AssetPool.getBlockTexture();
-        glActiveTexture(tex.getID());
+        glActiveTexture(GL_TEXTURE0 + tex.getID());
         tex.bind();
 
-        shader.uploadTexture("uTexture", GL_TEXTURE0 + AssetPool.getBlockTexture().getID());
+        shader.uploadTexture("uTexture", tex.getID());
 
         glBindVertexArray(vaoID);
         glEnableVertexAttribArray(0);
